@@ -3,7 +3,7 @@ import axios from 'axios';
 
 // Create an axios instance with custom defaults
 const instance = axios.create({
-  baseURL:  'http://trizenlmsinstructorbackend.llp.trizenventures.com',  // Updated to match backend port
+  baseURL:  'https://trizenlmsinstructorbackend.llp.trizenventures.com',  // Updated to match backend port
   timeout: 15000,
   headers: {
     'Content-Type': 'application/json',
