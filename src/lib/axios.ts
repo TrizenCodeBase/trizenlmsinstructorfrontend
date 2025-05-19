@@ -1,14 +1,14 @@
-
 import axios from 'axios';
 
 // Create an axios instance with custom defaults
 const instance = axios.create({
-  baseURL:  'https://trizenlmsinstructorbackend.llp.trizenventures.com',  // Updated to match backend port
+  baseURL: 'https://trizenlmsinstructorbackend.llp.trizenventures.com',
   timeout: 15000,
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
-  },
-  withCredentials: true,
+    'Accept': 'application/json',
+  }
 });
 
 // Add request interceptor to include auth token (if available)
@@ -17,6 +17,8 @@ instance.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  // Ensure CORS headers are present
+  config.headers['Access-Control-Allow-Origin'] = 'https://instructor.lms.trizenventures.com';
   return config;
 });
 
