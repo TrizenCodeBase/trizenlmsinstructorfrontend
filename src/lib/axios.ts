@@ -17,8 +17,6 @@ instance.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
-  // Ensure CORS headers are present
-  config.headers['Access-Control-Allow-Origin'] = 'https://instructor.lms.trizenventures.com';
   return config;
 });
 
