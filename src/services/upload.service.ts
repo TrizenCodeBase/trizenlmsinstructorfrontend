@@ -1,7 +1,6 @@
-
 import { toast } from "sonner";
 
-const API_URL = "http://localhost:5001/api";
+const API_URL = "https://trizenlmsinstructorbackend.llp.trizenventures.com/api";
 
 export interface UploadProgressCallback {
   (progress: number): void;
@@ -39,6 +38,7 @@ export const uploadVideo = async (
         const response = await fetch(`${API_URL}/upload`, {
           method: "POST",
           body: formData,
+          credentials: 'include',  // Add credentials for CORS
         });
 
         if (!response.ok) {
