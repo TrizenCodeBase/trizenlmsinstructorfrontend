@@ -20,7 +20,7 @@ export const uploadVideo = async (
   onComplete: UploadCompleteCallback,
   onError: UploadErrorCallback
 ) => {
-  const chunkSize = 5 * 1024 * 1024; // 10MB chunks
+  const chunkSize = 10 * 1024 * 1024; // 10MB chunks for better performance
   const chunks = Math.ceil(file.size / chunkSize);
   
   try {
@@ -98,9 +98,9 @@ export const validateVideoFile = (file: File): string | null => {
     return "Please select a valid video file";
   }
 
-  // 1000MB limit
-  if (file.size > 1000 * 1024 * 1024) {
-    return "The file size exceeds 1000MB. Please upload a smaller file.";
+  // 5GB limit (5000MB)
+  if (file.size > 5000 * 1024 * 1024) {
+    return "The file size exceeds 5GB (5000MB). Please upload a smaller file.";
   }
 
   return null;

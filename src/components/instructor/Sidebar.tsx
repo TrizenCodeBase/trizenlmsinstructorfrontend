@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import {
@@ -8,7 +7,10 @@ import {
   MessageSquare,
   LogOut,
   Video,
-  Award
+  Award,
+  HelpCircle,
+  FileText,
+  Headphones
 } from 'lucide-react';
 
 type NavItemProps = {
@@ -46,11 +48,16 @@ const Sidebar = ({ isOpen, onClose, onLogout }: SidebarProps) => {
     { name: 'Dashboard', href: '/instructor', icon: BarChart2 },
     { name: 'Courses', href: '/instructor/courses', icon: BookOpen },
     { name: 'Students', href: '/instructor/students', icon: Users },
-    { name: 'Videos', href: '/instructor/video-upload', icon: Video },
     { name: 'Assessments', href: '/instructor/assessments', icon: Award },
-    { name: 'Live Sessions', href: '/instructor/live-sessions', icon: BookOpen },
+    { name: 'Live Sessions', href: '/instructor/live-sessions', icon: Video },
     { name: 'Messages', href: '/instructor/messages', icon: MessageSquare },
     { name: 'Profile', href: '/instructor/profile', icon: Users },
+  ];
+
+  const resourcesNavigation = [
+    { name: 'Instructor Guidelines', href: '/instructor/guidelines', icon: FileText },
+    { name: 'FAQ', href: '/instructor/faq', icon: HelpCircle },
+    { name: 'Support', href: '/instructor/support', icon: Headphones },
   ];
 
   const onMobileItemClick = () => {
@@ -63,6 +70,9 @@ const Sidebar = ({ isOpen, onClose, onLogout }: SidebarProps) => {
     <div className="flex flex-col h-full">
       {/* Main Navigation */}
       <nav className="flex-1 px-2 py-4 overflow-y-auto">
+        <h3 className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4">
+          Main Menu
+        </h3>
         <div className="space-y-1">
           {mainNavigation.map((item) => (
             <NavItem 
@@ -71,6 +81,22 @@ const Sidebar = ({ isOpen, onClose, onLogout }: SidebarProps) => {
               onClick={onMobileItemClick} 
             />
           ))}
+        </div>
+
+        {/* Resources & Support Section */}
+        <div className="mt-8">
+          <h3 className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+            Resources & Support
+          </h3>
+          <div className="mt-2 space-y-1">
+            {resourcesNavigation.map((item) => (
+              <NavItem 
+                key={item.name} 
+                {...item} 
+                onClick={onMobileItemClick} 
+              />
+            ))}
+          </div>
         </div>
       </nav>
 
