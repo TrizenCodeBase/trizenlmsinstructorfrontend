@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -35,30 +34,31 @@ const FAQ = () => {
         <h1 className="text-3xl font-bold">Frequently Asked Questions</h1>
       </div>
       
-      <Alert className="bg-blue-50 border-blue-200">
-        <AlertTitle className="text-blue-700">FAQ Section</AlertTitle>
-        <AlertDescription className="text-blue-600">
+      <Alert className="border-[#3F2B96]/20 bg-[#3F2B96]/5">
+        <HelpCircle className="h-4 w-4 text-[#3F2B96]" />
+        <AlertTitle className="text-[#3F2B96]">FAQ Section</AlertTitle>
+        <AlertDescription>
           Here are some common questions and answers to help you.
         </AlertDescription>
       </Alert>
 
       <Accordion type="single" collapsible>
         <AccordionItem value="question1">
-          <AccordionTrigger>What is the purpose of this platform?</AccordionTrigger>
+          <AccordionTrigger className="text-[#3F2B96] hover:text-[#3F2B96]">What is the purpose of this platform?</AccordionTrigger>
           <AccordionContent>
             <p>This platform is designed to help instructors create and manage their courses effectively.</p>
           </AccordionContent>
         </AccordionItem>
         
         <AccordionItem value="question2">
-          <AccordionTrigger>How can I create a course?</AccordionTrigger>
+          <AccordionTrigger className="text-[#3F2B96] hover:text-[#3F2B96]">How can I create a course?</AccordionTrigger>
           <AccordionContent>
             <p>You can create a course by following the steps outlined in the "Getting Started" section.</p>
           </AccordionContent>
         </AccordionItem>
 
         <AccordionItem value="question3">
-          <AccordionTrigger>What resources are available for instructors?</AccordionTrigger>
+          <AccordionTrigger className="text-[#3F2B96] hover:text-[#3F2B96]">What resources are available for instructors?</AccordionTrigger>
           <AccordionContent>
             <p>We offer various resources, including templates, guides, and webinars to support your teaching.</p>
           </AccordionContent>
@@ -69,17 +69,17 @@ const FAQ = () => {
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
         <Input 
           placeholder="Search all FAQs..." 
-          className="w-full pl-10 py-6 text-lg"
+          className="w-full pl-10 py-6 text-lg border-[#3F2B96]/20 focus-visible:ring-[#3F2B96]"
         />
       </div>
       
       <Tabs defaultValue="general" className="space-y-4">
-        <TabsList className="grid grid-cols-2 md:grid-cols-5 mb-16">
-          <TabsTrigger value="general">General</TabsTrigger>
-          <TabsTrigger value="courses">Courses</TabsTrigger>
-          <TabsTrigger value="students">Students</TabsTrigger>
-          <TabsTrigger value="content">Content</TabsTrigger>
-          <TabsTrigger value="technical">Technical</TabsTrigger>
+        <TabsList className="grid grid-cols-2 md:grid-cols-5 mb-16 bg-[#3F2B96]/10">
+          <TabsTrigger value="general" className="data-[state=active]:bg-[#3F2B96] data-[state=active]:text-white">General</TabsTrigger>
+          <TabsTrigger value="courses" className="data-[state=active]:bg-[#3F2B96] data-[state=active]:text-white">Courses</TabsTrigger>
+          <TabsTrigger value="students" className="data-[state=active]:bg-[#3F2B96] data-[state=active]:text-white">Students</TabsTrigger>
+          <TabsTrigger value="content" className="data-[state=active]:bg-[#3F2B96] data-[state=active]:text-white">Content</TabsTrigger>
+          <TabsTrigger value="technical" className="data-[state=active]:bg-[#3F2B96] data-[state=active]:text-white">Technical</TabsTrigger>
         </TabsList>
         
         {/* General FAQs Tab */}
@@ -87,7 +87,7 @@ const FAQ = () => {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
-                <HelpCircle className="w-5 h-5 mr-2 text-primary" />
+                <HelpCircle className="w-5 h-5 mr-2 text-[#3F2B96]" />
                 General Questions
               </CardTitle>
               <CardDescription>
@@ -97,7 +97,7 @@ const FAQ = () => {
             <CardContent>
               <Accordion type="single" collapsible className="w-full">
                 <AccordionItem value="general-1">
-                  <AccordionTrigger>What are the requirements to become an instructor?</AccordionTrigger>
+                  <AccordionTrigger className="text-[#3F2B96] hover:text-[#3F2B96]">What are the requirements to become an instructor?</AccordionTrigger>
                   <AccordionContent>
                     <p className="mb-2">To become an instructor on our platform, you need:</p>
                     <ul className="list-disc list-inside space-y-1">
@@ -112,7 +112,7 @@ const FAQ = () => {
                 </AccordionItem>
                 
                 <AccordionItem value="general-2">
-                  <AccordionTrigger>How much time should I dedicate to being an instructor?</AccordionTrigger>
+                  <AccordionTrigger className="text-[#3F2B96] hover:text-[#3F2B96]">How much time should I dedicate to being an instructor?</AccordionTrigger>
                   <AccordionContent>
                     <p className="mb-2">The time commitment varies depending on:</p>
                     <ul className="list-disc list-inside space-y-1">
@@ -126,7 +126,7 @@ const FAQ = () => {
                 </AccordionItem>
                 
                 <AccordionItem value="general-3">
-                  <AccordionTrigger>What support does the platform provide to instructors?</AccordionTrigger>
+                  <AccordionTrigger className="text-[#3F2B96] hover:text-[#3F2B96]">What support does the platform provide to instructors?</AccordionTrigger>
                   <AccordionContent>
                     <p className="mb-2">We provide comprehensive support including:</p>
                     <ul className="list-disc list-inside space-y-1">
@@ -142,7 +142,7 @@ const FAQ = () => {
                 </AccordionItem>
                 
                 <AccordionItem value="general-4">
-                  <AccordionTrigger>Can I teach on other platforms simultaneously?</AccordionTrigger>
+                  <AccordionTrigger className="text-[#3F2B96] hover:text-[#3F2B96]">Can I teach on other platforms simultaneously?</AccordionTrigger>
                   <AccordionContent>
                     <p>Yes, you can teach on multiple platforms. However, we have the following guidelines:</p>
                     <ul className="list-disc list-inside space-y-1 mt-2">
@@ -163,7 +163,7 @@ const FAQ = () => {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
-                <BookOpen className="w-5 h-5 mr-2 text-primary" />
+                <BookOpen className="w-5 h-5 mr-2 text-[#3F2B96]" />
                 Course Creation & Management
               </CardTitle>
               <CardDescription>
@@ -173,7 +173,7 @@ const FAQ = () => {
             <CardContent>
               <Accordion type="single" collapsible className="w-full">
                 <AccordionItem value="courses-1">
-                  <AccordionTrigger>How do I create my first course?</AccordionTrigger>
+                  <AccordionTrigger className="text-[#3F2B96] hover:text-[#3F2B96]">How do I create my first course?</AccordionTrigger>
                   <AccordionContent>
                     <p className="mb-2">To create your first course:</p>
                     <ol className="list-decimal list-inside space-y-1 mb-2">
@@ -189,7 +189,7 @@ const FAQ = () => {
                 </AccordionItem>
                 
                 <AccordionItem value="courses-2">
-                  <AccordionTrigger>What should I include in my course description?</AccordionTrigger>
+                  <AccordionTrigger className="text-[#3F2B96] hover:text-[#3F2B96]">What should I include in my course description?</AccordionTrigger>
                   <AccordionContent>
                     <p className="mb-2">An effective course description should include:</p>
                     <ul className="list-disc list-inside space-y-1">
@@ -206,7 +206,7 @@ const FAQ = () => {
                 </AccordionItem>
                 
                 <AccordionItem value="courses-3">
-                  <AccordionTrigger>How long should my course be?</AccordionTrigger>
+                  <AccordionTrigger className="text-[#3F2B96] hover:text-[#3F2B96]">How long should my course be?</AccordionTrigger>
                   <AccordionContent>
                     <p className="mb-2">Course length depends on your subject matter, but some guidelines:</p>
                     <ul className="list-disc list-inside space-y-1">
@@ -225,7 +225,7 @@ const FAQ = () => {
                 </AccordionItem>
                 
                 <AccordionItem value="courses-4">
-                  <AccordionTrigger>Can I update my course after publishing?</AccordionTrigger>
+                  <AccordionTrigger className="text-[#3F2B96] hover:text-[#3F2B96]">Can I update my course after publishing?</AccordionTrigger>
                   <AccordionContent>
                     <p>Yes, you can update your course at any time. We actually encourage regular updates to keep content fresh and valuable.</p>
                     <p className="mt-2">You can make the following changes to published courses:</p>
@@ -249,7 +249,7 @@ const FAQ = () => {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
-                <Users className="w-5 h-5 mr-2 text-primary" />
+                <Users className="w-5 h-5 mr-2 text-[#3F2B96]" />
                 Student Management
               </CardTitle>
               <CardDescription>
@@ -259,7 +259,7 @@ const FAQ = () => {
             <CardContent>
               <Accordion type="single" collapsible className="w-full">
                 <AccordionItem value="students-1">
-                  <AccordionTrigger>How do I communicate with my students?</AccordionTrigger>
+                  <AccordionTrigger className="text-[#3F2B96] hover:text-[#3F2B96]">How do I communicate with my students?</AccordionTrigger>
                   <AccordionContent>
                     <p className="mb-2">You have several options for communicating with students:</p>
                     <ul className="list-disc list-inside space-y-1 mb-2">
@@ -274,7 +274,7 @@ const FAQ = () => {
                 </AccordionItem>
                 
                 <AccordionItem value="students-2">
-                  <AccordionTrigger>How do I track student progress?</AccordionTrigger>
+                  <AccordionTrigger className="text-[#3F2B96] hover:text-[#3F2B96]">How do I track student progress?</AccordionTrigger>
                   <AccordionContent>
                     <p className="mb-2">Our platform provides several tools to track student progress:</p>
                     <ul className="list-disc list-inside space-y-1">
@@ -289,7 +289,7 @@ const FAQ = () => {
                 </AccordionItem>
                 
                 <AccordionItem value="students-3">
-                  <AccordionTrigger>How can I increase student engagement?</AccordionTrigger>
+                  <AccordionTrigger className="text-[#3F2B96] hover:text-[#3F2B96]">How can I increase student engagement?</AccordionTrigger>
                   <AccordionContent>
                     <p className="mb-2">Successful strategies to boost student engagement include:</p>
                     <ul className="list-disc list-inside space-y-1">
@@ -306,7 +306,7 @@ const FAQ = () => {
                 </AccordionItem>
                 
                 <AccordionItem value="students-4">
-                  <AccordionTrigger>How should I handle difficult students or negative feedback?</AccordionTrigger>
+                  <AccordionTrigger className="text-[#3F2B96] hover:text-[#3F2B96]">How should I handle difficult students or negative feedback?</AccordionTrigger>
                   <AccordionContent>
                     <p className="mb-2">When dealing with challenging situations:</p>
                     <ol className="list-decimal list-inside space-y-1">
@@ -335,7 +335,7 @@ const FAQ = () => {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
-                <FileText className="w-5 h-5 mr-2 text-primary" />
+                <FileText className="w-5 h-5 mr-2 text-[#3F2B96]" />
                 Course Content
               </CardTitle>
               <CardDescription>
@@ -345,7 +345,7 @@ const FAQ = () => {
             <CardContent>
               <Accordion type="single" collapsible className="w-full">
                 <AccordionItem value="content-1">
-                  <AccordionTrigger>What file types can I upload for course content?</AccordionTrigger>
+                  <AccordionTrigger className="text-[#3F2B96] hover:text-[#3F2B96]">What file types can I upload for course content?</AccordionTrigger>
                   <AccordionContent>
                     <p className="mb-2">Supported file types include:</p>
                     <ul className="list-disc list-inside grid grid-cols-1 md:grid-cols-2 gap-1 mb-2">
@@ -361,7 +361,7 @@ const FAQ = () => {
                 </AccordionItem>
                 
                 <AccordionItem value="content-2">
-                  <AccordionTrigger>How do I create and grade assignments?</AccordionTrigger>
+                  <AccordionTrigger className="text-[#3F2B96] hover:text-[#3F2B96]">How do I create and grade assignments?</AccordionTrigger>
                   <AccordionContent>
                     <p className="mb-2">To create assignments:</p>
                     <ol className="list-decimal list-inside space-y-1 mb-2">
@@ -382,7 +382,7 @@ const FAQ = () => {
                 </AccordionItem>
                 
                 <AccordionItem value="content-3">
-                  <AccordionTrigger>What equipment do I need to create video content?</AccordionTrigger>
+                  <AccordionTrigger className="text-[#3F2B96] hover:text-[#3F2B96]">What equipment do I need to create video content?</AccordionTrigger>
                   <AccordionContent>
                     <p className="mb-2">Basic equipment requirements:</p>
                     <ul className="list-disc list-inside space-y-1">
@@ -397,7 +397,7 @@ const FAQ = () => {
                 </AccordionItem>
                 
                 <AccordionItem value="content-4">
-                  <AccordionTrigger>Can I use copyrighted materials in my course?</AccordionTrigger>
+                  <AccordionTrigger className="text-[#3F2B96] hover:text-[#3F2B96]">Can I use copyrighted materials in my course?</AccordionTrigger>
                   <AccordionContent>
                     <p className="mb-2">You must have proper rights to all content used in your courses. Here are the guidelines:</p>
                     <ul className="list-disc list-inside space-y-1">
@@ -424,7 +424,7 @@ const FAQ = () => {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
-                <Settings className="w-5 h-5 mr-2 text-primary" />
+                <Settings className="w-5 h-5 mr-2 text-[#3F2B96]" />
                 Technical Support
               </CardTitle>
               <CardDescription>
@@ -434,7 +434,7 @@ const FAQ = () => {
             <CardContent>
               <Accordion type="single" collapsible className="w-full">
                 <AccordionItem value="tech-1">
-                  <AccordionTrigger>Why are my videos taking too long to upload?</AccordionTrigger>
+                  <AccordionTrigger className="text-[#3F2B96] hover:text-[#3F2B96]">Why are my videos taking too long to upload?</AccordionTrigger>
                   <AccordionContent>
                     <p className="mb-2">Several factors can affect video upload speed:</p>
                     <ul className="list-disc list-inside space-y-1">
@@ -455,7 +455,7 @@ const FAQ = () => {
                 </AccordionItem>
                 
                 <AccordionItem value="tech-2">
-                  <AccordionTrigger>How can I improve video playback quality for students?</AccordionTrigger>
+                  <AccordionTrigger className="text-[#3F2B96] hover:text-[#3F2B96]">How can I improve video playback quality for students?</AccordionTrigger>
                   <AccordionContent>
                     <p className="mb-2">To ensure the best video playback experience:</p>
                     <ul className="list-disc list-inside space-y-1">
@@ -477,7 +477,7 @@ const FAQ = () => {
                 </AccordionItem>
                 
                 <AccordionItem value="tech-3">
-                  <AccordionTrigger>How do I embed external resources in my course?</AccordionTrigger>
+                  <AccordionTrigger className="text-[#3F2B96] hover:text-[#3F2B96]">How do I embed external resources in my course?</AccordionTrigger>
                   <AccordionContent>
                     <p className="mb-2">You can embed various external resources:</p>
                     <ol className="list-decimal list-inside space-y-1">
@@ -505,7 +505,7 @@ const FAQ = () => {
                 </AccordionItem>
                 
                 <AccordionItem value="tech-4">
-                  <AccordionTrigger>What browsers and devices are supported?</AccordionTrigger>
+                  <AccordionTrigger className="text-[#3F2B96] hover:text-[#3F2B96]">What browsers and devices are supported?</AccordionTrigger>
                   <AccordionContent>
                     <p className="mb-2">Our platform supports these browsers (latest two versions):</p>
                     <ul className="list-disc list-inside grid grid-cols-2 gap-1">

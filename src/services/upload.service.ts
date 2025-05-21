@@ -1,6 +1,8 @@
 import { toast } from "sonner";
 
 const API_URL = "https://trizenlmsinstructorbackend.llp.trizenventures.com/api";
+// const API_URL = "http://localhost:3000/api";
+const UPLOAD_TIMEOUT = 300000; // 5 minutes in milliseconds
 
 export interface UploadProgressCallback {
   (progress: number): void;
@@ -35,11 +37,20 @@ export const uploadVideo = async (
 
       try {
         console.log(`Uploading chunk ${Math.floor(start / chunkSize) + 1}/${chunks}`);
+        
+        // Create AbortController for timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), UPLOAD_TIMEOUT);
+
         const response = await fetch(`${API_URL}/upload`, {
           method: "POST",
           body: formData,
-          credentials: 'include',  // Add credentials for CORS
+          credentials: 'include',
+          signal: controller.signal,
         });
+
+        // Clear the timeout
+        clearTimeout(timeoutId);
 
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));

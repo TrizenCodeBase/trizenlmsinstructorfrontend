@@ -26,7 +26,7 @@ const Support = () => {
         <AlertTitle>Need immediate assistance?</AlertTitle>
         <AlertDescription>
           Our support team is available Monday-Friday, 9am-5pm ET. 
-          For urgent issues outside these hours, email <a href="mailto:projects.trizen@gmail.com" className="text-primary hover:underline">projects.trizen@gmail.com</a>
+          For urgent issues outside these hours, email <a href="mailto:projects.trizen@gmail.com" className="text-[#3F2B96] hover:underline">projects.trizen@gmail.com</a>
         </AlertDescription>
       </Alert>
       
@@ -54,8 +54,8 @@ const Support = () => {
                     </p>
                     <div className="space-y-2 text-sm">
                       <div className="flex items-center">
-                        <Mail className="w-4 h-4 mr-2 text-muted-foreground" />
-                        <a href="mailto:projects.trizen@gmail.com" className="text-primary hover:underline">
+                        <Mail className="w-4 h-4 mr-2 text-[#3F2B96]" />
+                        <a href="mailto:projects.trizen@gmail.com" className="text-[#3F2B96] hover:underline">
                           projects.trizen@gmail.com
                         </a>
                       </div>
@@ -73,8 +73,8 @@ const Support = () => {
                     </p>
                     <div className="space-y-2 text-sm">
                       <div className="flex items-center">
-                        <Mail className="w-4 h-4 mr-2 text-muted-foreground" />
-                        <a href="mailto:courses@trizenventures.com" className="text-primary hover:underline">
+                        <Mail className="w-4 h-4 mr-2 text-[#3F2B96]" />
+                        <a href="mailto:courses@trizenventures.com" className="text-[#3F2B96] hover:underline">
                         courses@trizenventures.com
                         </a>
                       </div>
@@ -92,8 +92,8 @@ const Support = () => {
                     </p>
                     <div className="space-y-2 text-sm">
                       <div className="flex items-center">
-                        <Mail className="w-4 h-4 mr-2 text-muted-foreground" />
-                        <a href="mailto:projects.trizen@gmail.com" className="text-primary hover:underline">
+                        <Mail className="w-4 h-4 mr-2 text-[#3F2B96]" />
+                        <a href="mailto:projects.trizen@gmail.com" className="text-[#3F2B96] hover:underline">
                           projects.trizen@gmail.com
                         </a>
                       </div>
@@ -111,8 +111,8 @@ const Support = () => {
                     </p>
                     <div className="space-y-2 text-sm">
                       <div className="flex items-center">
-                        <Mail className="w-4 h-4 mr-2 text-muted-foreground" />
-                        <a href="mailto:projects.trizen@gmail.com" className="text-primary hover:underline">
+                        <Mail className="w-4 h-4 mr-2 text-[#3F2B96]" />
+                        <a href="mailto:projects.trizen@gmail.com" className="text-[#3F2B96] hover:underline">
                           projects.trizen@gmail.com
                         </a>
                       </div>

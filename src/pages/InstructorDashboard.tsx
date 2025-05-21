@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -89,11 +88,24 @@ const InstructorDashboard = () => {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0">
         <h1 className="text-2xl sm:text-3xl font-bold">Instructor Dashboard</h1>
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" size="sm" onClick={() => navigate('/instructor/sessions')}>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => {
+              console.log('Navigating to live sessions...');
+              navigate('/instructor/live-sessions');
+            }}
+          >
             <Calendar className="w-4 h-4 mr-2" />
             <span className="hidden sm:inline">Schedule</span> Session
           </Button>
-          <Button size="sm" onClick={() => navigate('/instructor/courses/new')}>
+          <Button 
+            size="sm" 
+            onClick={() => {
+              console.log('Navigating to create course...');
+              navigate('/instructor/create-course');
+            }}
+          >
             <Plus className="w-4 h-4 mr-2" />
             Create Course
           </Button>

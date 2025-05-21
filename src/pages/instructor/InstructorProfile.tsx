@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -214,10 +213,10 @@ const InstructorProfile: React.FC = () => {
         <CardHeader>
           <div className="flex justify-between items-start">
             <div>
-              <CardTitle className="text-2xl">Instructor Profile</CardTitle>
+              <CardTitle className="text-2xl text-[#3F2B96]">Instructor Profile</CardTitle>
               <CardDescription>Manage your instructor profile and information</CardDescription>
             </div>
-            <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
+            <Button variant="outline" size="sm" onClick={() => setIsEditing(true)} className="border-[#3F2B96] text-[#3F2B96] hover:bg-[#3F2B96]/5">
               <Edit className="h-4 w-4 mr-2" />
               Edit Profile
             </Button>
@@ -233,14 +232,14 @@ const InstructorProfile: React.FC = () => {
                   {profileData.avatar ? (
                     <AvatarImage src={profileData.avatar} alt={profileData.name} />
                   ) : (
-                    <AvatarFallback className="text-lg bg-primary text-primary-foreground">
+                    <AvatarFallback className="text-lg bg-[#3F2B96] text-white">
                       {getInitials(profileData.name)}
                     </AvatarFallback>
                   )}
                 </Avatar>
                 
                 <div className="text-center">
-                  <h3 className="font-semibold text-xl">{profileData.name}</h3>
+                  <h3 className="font-semibold text-xl text-[#3F2B96]">{profileData.name}</h3>
                   <p className="text-muted-foreground">{profileData.role}</p>
                 </div>
                 
@@ -249,115 +248,123 @@ const InstructorProfile: React.FC = () => {
                     <span>Profile Completion</span>
                     <span>{profileData.profileCompletion}%</span>
                   </p>
-                  <Progress value={profileData.profileCompletion} className="h-2" />
+                  <Progress value={profileData.profileCompletion} className="h-2 bg-gray-200" indicatorClassName="bg-[#3F2B96]" />
                 </div>
               </div>
-              
+
               <div className="space-y-3">
-                <div className="flex items-center">
-                  <Mail className="h-4 w-4 mr-2 text-muted-foreground" />
+                <div className="flex items-center text-sm">
+                  <Mail className="h-4 w-4 mr-2 text-[#3F2B96]" />
                   <span>{profileData.email}</span>
                 </div>
                 
                 {profileData.phone && (
-                  <div className="flex items-center">
-                    <Phone className="h-4 w-4 mr-2 text-muted-foreground" />
+                  <div className="flex items-center text-sm">
+                    <Phone className="h-4 w-4 mr-2 text-[#3F2B96]" />
                     <span>{profileData.phone}</span>
                   </div>
                 )}
                 
                 {profileData.location && (
-                  <div className="flex items-center">
-                    <MapPin className="h-4 w-4 mr-2 text-muted-foreground" />
+                  <div className="flex items-center text-sm">
+                    <MapPin className="h-4 w-4 mr-2 text-[#3F2B96]" />
                     <span>{profileData.location}</span>
                   </div>
                 )}
               </div>
-              
-              <div className="space-y-3">
-                <div className="flex items-center">
-                  <Badge variant="secondary" className="mr-2">Specialty</Badge>
-                  <span>{profileData.specialty}</span>
+
+              <div>
+                <h4 className="text-sm font-medium mb-2 text-[#3F2B96]">Specialty</h4>
+                <Badge variant="outline" className="bg-[#3F2B96]/5 text-[#3F2B96] border-[#3F2B96]/20">{profileData.specialty}</Badge>
+                <div className="flex items-center mt-2 text-sm">
+                  <Clock className="h-4 w-4 mr-2 text-[#3F2B96]" />
+                  <span>{profileData.experience} Years Experience</span>
                 </div>
-                
-                <div className="flex items-center">
-                  <Badge variant="secondary" className="mr-2">Experience</Badge>
-                  <span>{profileData.experience} years</span>
+              </div>
+              
+              <div>
+                <h4 className="text-sm font-medium mb-2 text-[#3F2B96]">Social Profiles</h4>
+                <div className="space-y-2">
+                  {profileData.socialLinks.linkedin && (
+                    <a href={profileData.socialLinks.linkedin} target="_blank" rel="noopener noreferrer" className="text-[#3F2B96] hover:underline text-sm flex items-center">
+                      LinkedIn Profile
+                    </a>
+                  )}
+                  {profileData.socialLinks.twitter && (
+                    <a href={profileData.socialLinks.twitter} target="_blank" rel="noopener noreferrer" className="text-[#3F2B96] hover:underline text-sm flex items-center">
+                      Twitter Profile
+                    </a>
+                  )}
+                  {profileData.socialLinks.website && (
+                    <a href={profileData.socialLinks.website} target="_blank" rel="noopener noreferrer" className="text-[#3F2B96] hover:underline text-sm flex items-center">
+                      Personal Website
+                    </a>
+                  )}
                 </div>
               </div>
             </div>
             
-            {/* Middle column - Stats and bio */}
+            {/* Middle column - Bio and stats */}
             <div className="space-y-6 md:col-span-2">
               <div>
-                <h3 className="font-medium mb-2">About Me</h3>
+                <h4 className="text-sm font-medium mb-2 text-[#3F2B96]">Bio</h4>
                 <p className="text-sm text-muted-foreground">{profileData.bio}</p>
               </div>
               
-              <div className="grid grid-cols-2 gap-4">
-                <Card>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <Card className="bg-[#3F2B96]/5 border-[#3F2B96]/20">
                   <CardContent className="p-4 flex items-center">
-                    <BookOpen className="h-8 w-8 text-primary mr-4" />
+                    <BookOpen className="h-8 w-8 text-[#3F2B96] mr-4" />
                     <div>
-                      <p className="text-sm text-muted-foreground">Courses</p>
-                      <p className="text-xl font-semibold">{profileData.totalCourses}</p>
+                      <p className="text-2xl font-semibold">{profileData.totalCourses}</p>
+                      <p className="text-xs text-muted-foreground">Courses Created</p>
                     </div>
                   </CardContent>
                 </Card>
                 
-                <Card>
+                <Card className="bg-[#3F2B96]/5 border-[#3F2B96]/20">
                   <CardContent className="p-4 flex items-center">
-                    <Users className="h-8 w-8 text-primary mr-4" />
+                    <Users className="h-8 w-8 text-[#3F2B96] mr-4" />
                     <div>
-                      <p className="text-sm text-muted-foreground">Students</p>
-                      <p className="text-xl font-semibold">{profileData.totalStudents}</p>
+                      <p className="text-2xl font-semibold">{profileData.totalStudents}</p>
+                      <p className="text-xs text-muted-foreground">Total Students</p>
                     </div>
                   </CardContent>
                 </Card>
                 
-                <Card>
+                <Card className="bg-[#3F2B96]/5 border-[#3F2B96]/20">
                   <CardContent className="p-4 flex items-center">
-                    <Clock className="h-8 w-8 text-primary mr-4" />
+                    <Clock className="h-8 w-8 text-[#3F2B96] mr-4" />
                     <div>
-                      <p className="text-sm text-muted-foreground">Teaching Hours</p>
-                      <p className="text-xl font-semibold">{profileData.teachingHours}</p>
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardContent className="p-4 flex items-center">
-                    <Star className="h-8 w-8 text-primary mr-4" />
-                    <div>
-                      <p className="text-sm text-muted-foreground">Avg. Rating</p>
-                      <p className="text-xl font-semibold">{profileData.averageRating} <span className="text-xs text-muted-foreground">/ 5</span></p>
+                      <p className="text-2xl font-semibold">{profileData.teachingHours}</p>
+                      <p className="text-xs text-muted-foreground">Teaching Hours</p>
                     </div>
                   </CardContent>
                 </Card>
               </div>
               
               <div>
-                <h3 className="font-medium mb-2">Recent Reviews</h3>
+                <h4 className="text-sm font-medium mb-3 flex items-center text-[#3F2B96]">
+                  <Star className="h-4 w-4 mr-2 text-[#3F2B96]" />
+                  <span>Instructor Rating: {profileData.averageRating}/5.0</span>
+                </h4>
+                
                 <div className="space-y-3">
-                  {profileData.recentReviews && profileData.recentReviews.length > 0 ? (
-                    profileData.recentReviews.map((review, index) => (
-                      <div key={index} className="p-3 border rounded-lg">
-                        <div className="flex justify-between items-center mb-1">
-                          <p className="font-medium">{review.student}</p>
+                  {profileData.recentReviews.map((review, index) => (
+                    <Card key={index} className="bg-gray-50">
+                      <CardContent className="p-3">
+                        <div className="flex justify-between items-start mb-1">
+                          <p className="font-medium text-sm">{review.student}</p>
                           <div className="flex items-center">
-                            <Star className="h-4 w-4 text-yellow-500 fill-yellow-500 mr-1" />
-                            <span>{review.rating}</span>
+                            <Star className="h-3 w-3 text-yellow-500 fill-yellow-500 mr-1" />
+                            <span className="text-sm">{review.rating}</span>
                           </div>
                         </div>
                         <p className="text-sm text-muted-foreground">{review.comment}</p>
                         <p className="text-xs text-muted-foreground mt-1">{review.date}</p>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="p-3 border rounded-lg text-center text-muted-foreground">
-                      No reviews yet
-                    </div>
-                  )}
+                      </CardContent>
+                    </Card>
+                  ))}
                 </div>
               </div>
             </div>
@@ -367,14 +374,14 @@ const InstructorProfile: React.FC = () => {
       
       {/* Edit Profile Dialog */}
       <Dialog open={isEditing} onOpenChange={setIsEditing}>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="sm:max-w-[625px]">
           <DialogHeader>
-            <DialogTitle>Edit Instructor Profile</DialogTitle>
+            <DialogTitle className="text-[#3F2B96]">Edit Profile</DialogTitle>
           </DialogHeader>
           
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
                   name="name"
@@ -382,7 +389,7 @@ const InstructorProfile: React.FC = () => {
                     <FormItem>
                       <FormLabel>Full Name</FormLabel>
                       <FormControl>
-                        <Input {...field} disabled={isLoading} />
+                        <Input {...field} className="focus-visible:ring-[#3F2B96]" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -394,15 +401,17 @@ const InstructorProfile: React.FC = () => {
                   name="role"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Position/Role</FormLabel>
+                      <FormLabel>Role / Title</FormLabel>
                       <FormControl>
-                        <Input {...field} disabled={isLoading} />
+                        <Input {...field} className="focus-visible:ring-[#3F2B96]" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
                   name="email"
@@ -410,7 +419,7 @@ const InstructorProfile: React.FC = () => {
                     <FormItem>
                       <FormLabel>Email</FormLabel>
                       <FormControl>
-                        <Input {...field} disabled={isLoading} />
+                        <Input {...field} type="email" className="focus-visible:ring-[#3F2B96]" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -424,13 +433,15 @@ const InstructorProfile: React.FC = () => {
                     <FormItem>
                       <FormLabel>Phone</FormLabel>
                       <FormControl>
-                        <Input {...field} disabled={isLoading} />
+                        <Input {...field} className="focus-visible:ring-[#3F2B96]" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
                   name="location"
@@ -438,7 +449,7 @@ const InstructorProfile: React.FC = () => {
                     <FormItem>
                       <FormLabel>Location</FormLabel>
                       <FormControl>
-                        <Input {...field} disabled={isLoading} />
+                        <Input {...field} className="focus-visible:ring-[#3F2B96]" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -452,13 +463,15 @@ const InstructorProfile: React.FC = () => {
                     <FormItem>
                       <FormLabel>Specialty</FormLabel>
                       <FormControl>
-                        <Input {...field} disabled={isLoading} />
+                        <Input {...field} className="focus-visible:ring-[#3F2B96]" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
                   name="experience"
@@ -466,7 +479,7 @@ const InstructorProfile: React.FC = () => {
                     <FormItem>
                       <FormLabel>Years of Experience</FormLabel>
                       <FormControl>
-                        <Input type="number" {...field} disabled={isLoading} />
+                        <Input {...field} type="number" min="0" className="focus-visible:ring-[#3F2B96]" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -483,9 +496,8 @@ const InstructorProfile: React.FC = () => {
                     <FormControl>
                       <Textarea 
                         {...field} 
-                        disabled={isLoading} 
-                        rows={4}
-                        placeholder="Tell students about your background, experience, and teaching style"
+                        className="min-h-[120px] focus-visible:ring-[#3F2B96]" 
+                        placeholder="Tell students about yourself, your experience, and teaching style"
                       />
                     </FormControl>
                     <FormMessage />
@@ -493,55 +505,68 @@ const InstructorProfile: React.FC = () => {
                 )}
               />
               
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <FormField
-                  control={form.control}
-                  name="linkedin"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>LinkedIn URL</FormLabel>
-                      <FormControl>
-                        <Input {...field} disabled={isLoading} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              <div className="space-y-4">
+                <h4 className="text-sm font-medium text-[#3F2B96]">Social Media Links</h4>
                 
-                <FormField
-                  control={form.control}
-                  name="twitter"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Twitter URL</FormLabel>
-                      <FormControl>
-                        <Input {...field} disabled={isLoading} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="website"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Personal Website</FormLabel>
-                      <FormControl>
-                        <Input {...field} disabled={isLoading} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div className="grid grid-cols-1 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="linkedin"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>LinkedIn URL</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="https://linkedin.com/in/username" className="focus-visible:ring-[#3F2B96]" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="twitter"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Twitter URL</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="https://twitter.com/username" className="focus-visible:ring-[#3F2B96]" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="website"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Personal Website</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="https://yourwebsite.com" className="focus-visible:ring-[#3F2B96]" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
               </div>
               
               <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setIsEditing(false)} disabled={isLoading}>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setIsEditing(false)}
+                  className="border-[#3F2B96] text-[#3F2B96] hover:bg-[#3F2B96]/5"
+                >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={isLoading}>
+                <Button 
+                  type="submit" 
+                  disabled={isLoading}
+                  className="bg-[#3F2B96] hover:bg-[#5b44ad] text-white"
+                >
                   {isLoading ? "Saving..." : "Save Changes"}
                 </Button>
               </DialogFooter>

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,7 +12,7 @@ const LiveSessions = () => {
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-0 sm:space-x-4">
         <Button
           variant="ghost"
-          onClick={() => navigate('/instructor/dashboard')}
+          onClick={() => navigate('/instructor')}
           className="p-2 sm:p-4"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />

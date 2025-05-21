@@ -1,6 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-
-import React from 'react';
+import React, { useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import {
   Accordion,
@@ -33,21 +32,175 @@ import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 
 const InstructorGuidelines = () => {
+  const guidelinesRef = useRef<HTMLDivElement>(null);
+  
+  const handleDownloadPDF = () => {
+    // Create a new window
+    const printWindow = window.open('', '_blank');
+    if (!printWindow || !guidelinesRef.current) return;
+    
+    // Clone the node to avoid modifying the actual DOM
+    const contentClone = guidelinesRef.current.cloneNode(true) as HTMLElement;
+    
+    // Find all tab contents in the clone and make them visible
+    const tabContents = contentClone.querySelectorAll('[role="tabpanel"]');
+    tabContents.forEach(tabContent => {
+      // Override the hidden attribute and display style
+      (tabContent as HTMLElement).style.display = 'block';
+      (tabContent as HTMLElement).hidden = false;
+      (tabContent as HTMLElement).removeAttribute('hidden');
+      (tabContent as HTMLElement).setAttribute('data-state', 'active');
+    });
+    
+    // Remove the tab triggers as they're not needed in the PDF
+    const tabTriggers = contentClone.querySelectorAll('[role="tablist"]');
+    tabTriggers.forEach(tabList => {
+      tabList.parentNode?.removeChild(tabList);
+    });
+    
+    // Get the modified HTML content
+    const content = contentClone.innerHTML;
+    
+    // Add some styling to make it look better for printing
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Instructor Guidelines</title>
+          <style>
+            body {
+              font-family: Arial, sans-serif;
+              line-height: 1.6;
+              color: #333;
+              padding: 20px;
+              max-width: 1000px;
+              margin: 0 auto;
+            }
+            h1 {
+              color: #3F2B96;
+              font-size: 28px;
+              margin-bottom: 20px;
+              text-align: center;
+              padding-bottom: 10px;
+              border-bottom: 2px solid #3F2B96;
+            }
+            h2, h3, h4 {
+              color: #3F2B96;
+              margin-top: 20px;
+            }
+            .section {
+              margin-bottom: 30px;
+              page-break-inside: avoid;
+            }
+            ul, ol {
+              margin-left: 20px;
+            }
+            li {
+              margin-bottom: 8px;
+            }
+            .tip {
+              background-color: #f0f0ff;
+              border-left: 4px solid #3F2B96;
+              padding: 10px;
+              margin: 15px 0;
+            }
+            [data-state="active"] {
+              display: block !important;
+            }
+            .section-title {
+              background-color: #3F2B96;
+              color: white;
+              padding: 10px 15px;
+              margin-top: 30px;
+              margin-bottom: 15px;
+              font-size: 18px;
+              font-weight: bold;
+              border-radius: 4px;
+              page-break-before: always;
+            }
+            .section-content {
+              padding: 0 10px;
+            }
+            @media print {
+              body {
+                padding: 0;
+              }
+              button, [role="tab"], [role="tablist"] {
+                display: none !important;
+              }
+              [role="tabpanel"] {
+                display: block !important;
+                visibility: visible !important;
+                height: auto !important;
+                overflow: visible !important;
+              }
+              .section-title {
+                page-break-before: always;
+              }
+            }
+          </style>
+        </head>
+        <body>
+          <h1>Instructor Guidelines</h1>
+          
+          <div class="section-title">1. Getting Started</div>
+          <div class="section-content">
+            ${tabContents[0]?.innerHTML || ''}
+          </div>
+          
+          <div class="section-title">2. Creating Courses</div>
+          <div class="section-content">
+            ${tabContents[1]?.innerHTML || ''}
+          </div>
+          
+          <div class="section-title">3. Teaching Techniques</div>
+          <div class="section-content">
+            ${tabContents[2]?.innerHTML || ''}
+          </div>
+          
+          <div class="section-title">4. Student Management</div>
+          <div class="section-content">
+            ${tabContents[3]?.innerHTML || ''}
+          </div>
+          
+          <div class="section-title">5. Best Practices</div>
+          <div class="section-content">
+            ${tabContents[4]?.innerHTML || ''}
+          </div>
+        </body>
+      </html>
+    `;
+    
+    // Write to the new window
+    printWindow.document.open();
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+    
+    // Wait for content to load then print
+    printWindow.onload = () => {
+      printWindow.print();
+      // The user can save as PDF from the print dialog
+    };
+  };
+  
   return (
     <div className="m-0 p-0">
       <div className="flex flex-col sm:flex-row justify-between items-center">
         <h1 className="text-2xl sm:text-3xl font-bold flex items-center">
-          <Lightbulb className="w-8 h-8 mr-2 text-yellow-500" />
+          <Lightbulb className="w-8 h-8 mr-2 text-[#3F2B96]" />
           Instructor Guidelines
         </h1>
-        <Button variant="outline" className="w-full sm:w-auto mt-4 sm:mt-0">
+        <Button 
+          className="w-full sm:w-auto mt-4 sm:mt-0 bg-[#3F2B96] hover:bg-[#5b44ad] text-white"
+          onClick={handleDownloadPDF}
+        >
           <FileText className="w-4 h-4 mr-2" />
           Download PDF
         </Button>
       </div>
       
-      <Alert className="flex items-start space-x-2">
-        <HelpCircle className="h-4 w-4" />
+      <Alert className="flex items-start space-x-2 border-[#3F2B96]/20 bg-[#3F2B96]/5 mt-4">
+        <HelpCircle className="h-4 w-4 text-[#3F2B96]" />
         <div>
           <AlertTitle>Comprehensive Guide</AlertTitle>
           <AlertDescription>
@@ -56,13 +209,14 @@ const InstructorGuidelines = () => {
         </div>
       </Alert>
       
-      <Tabs defaultValue="getting-started" className="space-y-4">
-        <TabsList className="grid grid-cols-2 md:grid-cols-5 mb-16">
-          <TabsTrigger value="getting-started" className="text-gray-700 w-full">Getting Started</TabsTrigger>
-          <TabsTrigger value="creating-courses" className="text-gray-700 w-full">Creating Courses</TabsTrigger>
-          <TabsTrigger value="teaching" className="text-gray-700 w-full">Teaching</TabsTrigger>
-          <TabsTrigger value="student-management" className="text-gray-700 w-full">Student Management</TabsTrigger>
-          <TabsTrigger value="best-practices" className="text-gray-700 w-full">Best Practices</TabsTrigger>
+      <div ref={guidelinesRef}>
+        <Tabs defaultValue="getting-started" className="space-y-4 mt-6">
+          <TabsList className="grid grid-cols-2 md:grid-cols-5 mb-16 bg-[#3F2B96]/10">
+            <TabsTrigger value="getting-started" className="data-[state=active]:bg-[#3F2B96] data-[state=active]:text-white">Getting Started</TabsTrigger>
+            <TabsTrigger value="creating-courses" className="data-[state=active]:bg-[#3F2B96] data-[state=active]:text-white">Creating Courses</TabsTrigger>
+            <TabsTrigger value="teaching" className="data-[state=active]:bg-[#3F2B96] data-[state=active]:text-white">Teaching</TabsTrigger>
+            <TabsTrigger value="student-management" className="data-[state=active]:bg-[#3F2B96] data-[state=active]:text-white">Student Management</TabsTrigger>
+            <TabsTrigger value="best-practices" className="data-[state=active]:bg-[#3F2B96] data-[state=active]:text-white">Best Practices</TabsTrigger>
         </TabsList>
         
         <TabsContent value="getting-started">
@@ -77,34 +231,34 @@ const InstructorGuidelines = () => {
               <div className="space-y-4">
                 <div className="flex flex-col gap-4">
                   <div className="flex items-start gap-4">
-                    <div className="bg-primary text-primary-foreground rounded-full h-8 w-8 flex items-center justify-center flex-shrink-0">1</div>
+                      <div className="bg-[#3F2B96] text-white rounded-full h-8 w-8 flex items-center justify-center flex-shrink-0">1</div>
                     <div>
                       <h3 className="font-semibold text-lg">Complete Your Profile</h3>
                       <p className="text-muted-foreground">
                         A complete profile builds credibility with students. Add your professional experience, 
                         qualifications, teaching philosophy, and a high-quality profile photo.
                       </p>
-                      <div className="mt-2 bg-muted p-3 rounded-md">
-                        <p className="text-sm font-medium">Pro Tip</p>
+                        <div className="mt-2 bg-[#3F2B96]/5 border border-[#3F2B96]/20 p-3 rounded-md">
+                          <p className="text-sm font-medium text-[#3F2B96]">Pro Tip</p>
                         <p className="text-sm">Focus on credentials relevant to what you'll be teaching.</p>
                       </div>
                     </div>
                   </div>
 
                   <div className="flex items-start gap-4">
-                    <div className="bg-primary text-primary-foreground rounded-full h-8 w-8 flex items-center justify-center flex-shrink-0">2</div>
+                      <div className="bg-[#3F2B96] text-white rounded-full h-8 w-8 flex items-center justify-center flex-shrink-0">2</div>
                     <div>
                       <h3 className="font-semibold text-lg">Choose Your Teaching Area</h3>
                       <p className="text-muted-foreground">
                         Select topics where you have expertise and passion. Your enthusiasm will come through in your teaching.
                       </p>
                       <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-2">
-                        <div className="border rounded-md p-2">
-                          <h4 className="text-sm font-medium">What you know well</h4>
+                          <div className="border border-[#3F2B96]/20 rounded-md p-2">
+                            <h4 className="text-sm font-medium text-[#3F2B96]">What you know well</h4>
                           <p className="text-xs text-muted-foreground">Topics where you have formal training or extensive experience</p>
                         </div>
-                        <div className="border rounded-md p-2">
-                          <h4 className="text-sm font-medium">What you're passionate about</h4>
+                          <div className="border border-[#3F2B96]/20 rounded-md p-2">
+                            <h4 className="text-sm font-medium text-[#3F2B96]">What you're passionate about</h4>
                           <p className="text-xs text-muted-foreground">Subjects you enjoy discussing and teaching</p>
                         </div>
                       </div>
@@ -112,7 +266,7 @@ const InstructorGuidelines = () => {
                   </div>
                   
                   <div className="flex items-start gap-4">
-                    <div className="bg-primary text-primary-foreground rounded-full h-8 w-8 flex items-center justify-center flex-shrink-0">3</div>
+                      <div className="bg-[#3F2B96] text-white rounded-full h-8 w-8 flex items-center justify-center flex-shrink-0">3</div>
                     <div>
                       <h3 className="font-semibold text-lg">Understand Platform Tools</h3>
                       <p className="text-muted-foreground">
@@ -120,10 +274,10 @@ const InstructorGuidelines = () => {
                         and analytics dashboard before you start building your first course.
                       </p>
                       <div className="mt-2 flex flex-col gap-4">
-                        <Button variant="outline" size="sm" className="w-full">
+                          <Button variant="outline" size="sm" className="w-full border-[#3F2B96] text-[#3F2B96] hover:bg-[#3F2B96]/5">
                           Watch Tutorial
                         </Button>
-                        <Button variant="outline" size="sm" className="w-full">
+                          <Button variant="outline" size="sm" className="w-full border-[#3F2B96] text-[#3F2B96] hover:bg-[#3F2B96]/5">
                           Join Webinar
                         </Button>
                       </div>
@@ -540,6 +694,7 @@ const InstructorGuidelines = () => {
           </Card>
         </TabsContent>
       </Tabs>
+      </div>
     </div>
   );
 };

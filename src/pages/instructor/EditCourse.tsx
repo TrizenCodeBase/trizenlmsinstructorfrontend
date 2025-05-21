@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -13,7 +12,8 @@ import {
   Upload,
   Code,
   AlertCircle,
-  Loader2
+  Loader2,
+  Trash2
 } from 'lucide-react';
 import { useCourseDetails, useUpdateCourse } from '@/services/courseService';
 import { toast } from 'sonner';
@@ -62,6 +62,7 @@ const EditCourse = () => {
   const [roadmapDays, setRoadmapDays] = useState<any[]>([]);
   const [uploadedFile, setUploadedFile] = useState<UploadedFile | null>(null);
   const { user } = useAuth();
+  const lastDayRef = useRef<HTMLDivElement>(null);
   
   const { data: courseData, isLoading: isLoadingCourse } = useCourseDetails(courseId);
   const { mutate: updateCourse, isPending } = useUpdateCourse();
@@ -134,6 +135,11 @@ const EditCourse = () => {
     });
     form.setValue('roadmap', updatedRoadmap);
     setRoadmapDays(updatedRoadmap);
+    
+    // Scroll to the newly added day after a short delay to ensure the element is rendered
+    setTimeout(() => {
+      lastDayRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
   };
   
   const handleVideoUpload = (fileInfo: UploadedFile, dayIndex: number) => {
@@ -202,6 +208,57 @@ const EditCourse = () => {
     form.setValue('roadmap', updatedRoadmap);
     setRoadmapDays(updatedRoadmap);
   };
+  
+  const handleDeleteDay = (event: React.MouseEvent, indexToDelete: number) => {
+    // Prevent event bubbling and default behavior
+    event.preventDefault();
+    event.stopPropagation();
+
+    const currentRoadmap = [...form.getValues().roadmap];
+    console.log('Before deletion:', currentRoadmap);
+
+    // Prevent deleting if it's the last day
+    if (currentRoadmap.length <= 1) {
+      toast.error("Cannot delete the last day. A course must have at least one day.");
+      return;
+    }
+
+    try {
+      // Create new array without the deleted day
+      const updatedRoadmap = currentRoadmap.filter((_, index) => index !== indexToDelete);
+      console.log('After deletion:', updatedRoadmap);
+      
+      // Update the day numbers for remaining days
+      updatedRoadmap.forEach((day, index) => {
+        day.day = index + 1;
+      });
+
+      // First update the local state
+      setRoadmapDays(updatedRoadmap);
+
+      // Then update the form state
+      form.setValue('roadmap', updatedRoadmap, { 
+        shouldValidate: true,
+        shouldDirty: true,
+        shouldTouch: true
+      });
+
+      console.log('Final roadmap:', form.getValues().roadmap);
+      toast.success("Day deleted successfully");
+    } catch (error) {
+      console.error('Error deleting day:', error);
+      toast.error("Failed to delete day. Please try again.");
+    }
+  };
+  
+  // Keep the roadmap state in sync with form state
+  useEffect(() => {
+    const currentRoadmap = form.getValues().roadmap;
+    console.log('Roadmap updated:', currentRoadmap);
+    if (currentRoadmap) {
+      setRoadmapDays([...currentRoadmap]);
+    }
+  }, [form.watch('roadmap')]);
   
   const onSubmit = (data: CourseFormData) => {
     // Update course with the form data
@@ -449,9 +506,24 @@ const EditCourse = () => {
                 
                 <div className="space-y-8">
                   {roadmapDays.map((day, index) => (
-                    <Card key={index} className="border">
+                    <Card 
+                      key={`day-${index}-${day.day}`}
+                      className="border"
+                      ref={index === roadmapDays.length - 1 ? lastDayRef : undefined}
+                    >
                       <CardContent className="pt-6 space-y-4">
-                        <h3 className="text-lg font-medium">Day {day.day}</h3>
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-lg font-medium">Day {day.day}</h3>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={(e) => handleDeleteDay(e, index)}
+                            className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                            type="button"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                         
                         <div className="space-y-4">
                           <div>

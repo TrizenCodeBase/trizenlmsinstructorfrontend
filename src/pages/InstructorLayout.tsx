@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { X } from 'lucide-react';
@@ -40,7 +39,7 @@ const InstructorLayout = () => {
       </div>
 
       {/* Title Section - Desktop only */}
-      <div className="hidden md:flex fixed top-0 left-0 w-64 h-16 bg-primary z-50 items-center justify-center">
+      <div className="hidden md:flex fixed top-0 left-0 w-64 h-16 bg-[#3F2B96] z-50 items-center justify-center">
         <h1 className="text-xl font-bold text-white">Instructor Panel</h1>
       </div>
 
@@ -51,13 +50,13 @@ const InstructorLayout = () => {
           sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         )}
       >
-        <div className="flex items-center justify-between h-16 px-4 bg-primary">
+        <div className="flex items-center justify-between h-16 px-4 bg-[#3F2B96]">
           <h1 className="text-xl font-bold text-white">Instructor Portal</h1>
           {/* Close button for mobile */}
           <Button 
             variant="ghost" 
             size="icon" 
-            className="md:hidden text-white hover:bg-primary/80"
+            className="md:hidden text-white hover:bg-[#5b44ad]"
             onClick={toggleSidebar}
           >
             <X className="h-6 w-6" />

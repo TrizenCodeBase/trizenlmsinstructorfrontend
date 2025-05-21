@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Routes, Route, BrowserRouter, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -18,6 +17,9 @@ import VideoUpload from './pages/instructor/VideoUpload';
 import PendingApproval from './pages/PendingApproval';
 import EditCourse from './pages/instructor/EditCourse';
 import NotFound from './pages/NotFound';
+import InstructorGuidelines from './pages/instructor/InstructorGuidelines';
+import FAQ from './pages/instructor/FAQ';
+import Support from './pages/instructor/Support';
 
 const queryClient = new QueryClient();
 
@@ -68,6 +70,9 @@ const App = () => {
               <Route path="messages" element={<Messages />} />
               <Route path="profile" element={<InstructorProfile />} />
               <Route path="video-upload" element={<VideoUpload />} />
+              <Route path="guidelines" element={<InstructorGuidelines />} />
+              <Route path="faq" element={<FAQ />} />
+              <Route path="support" element={<Support />} />
             </Route>
             
             {/* Wildcard route */}
