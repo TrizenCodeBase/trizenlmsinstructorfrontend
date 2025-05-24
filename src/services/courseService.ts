@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from '@/lib/axios';
 
@@ -32,6 +31,7 @@ export interface Course {
   duration: string;
   level: "Beginner" | "Intermediate" | "Advanced";
   category: string;
+  language: string;
   image: string;
   courseAccess: boolean;
   skills: string[];
@@ -112,6 +112,7 @@ const mockCourses: Course[] = [
     duration: '8 weeks',
     level: 'Beginner',
     category: 'Web Development',
+    language: 'English',
     image: 'https://placehold.co/600x400',
     courseAccess: true,
     skills: ['HTML', 'CSS', 'JavaScript'],
@@ -135,6 +136,7 @@ const mockCourses: Course[] = [
     duration: '6 weeks',
     level: 'Intermediate',
     category: 'Web Development',
+    language: 'English',
     image: 'https://placehold.co/600x400',
     courseAccess: true,
     skills: ['JavaScript', 'ES6', 'Async/Await'],

@@ -31,6 +31,19 @@ const TABS = [
   { id: "media-resources", label: "Media & Resources" },
 ];
 
+const LANGUAGES = [
+  'English',
+  'Hindi',
+  'Tamil',
+  'Telugu',
+  'Malayalam',
+  'Kannada',
+  'Bengali',
+  'Marathi',
+  'Gujarati',
+  'Punjabi'
+] as const;
+
 type CourseFormData = {
   title: string;
   description: string;
@@ -38,6 +51,7 @@ type CourseFormData = {
   instructor: string;
   duration: string;
   category: string;
+  language: string;
   level: "Beginner" | "Intermediate" | "Advanced";
   image: string;
   skills: string[];
@@ -72,6 +86,7 @@ const CreateCourse = () => {
       instructor: user?.name || "", // Set instructor name from logged in user
       duration: "",
       category: "",
+      language: "English", // Default to English
       level: "Beginner",
       image: "https://placehold.co/600x400", // Default placeholder image
       skills: [],
@@ -287,6 +302,19 @@ const CreateCourse = () => {
               <div className="space-y-4">
                 <FormField
                   control={form.control}
+                  name="instructor"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Instructor Name *</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Your name" {...field} readOnly disabled className="bg-gray-100" />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
                   name="title"
                   render={({ field }) => (
                     <FormItem>
@@ -335,19 +363,6 @@ const CreateCourse = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
-                    name="instructor"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Instructor Name *</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Your name" {...field} readOnly disabled className="bg-gray-100" />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
                     name="duration"
                     render={({ field }) => (
                       <FormItem>
@@ -355,6 +370,29 @@ const CreateCourse = () => {
                         <FormControl>
                           <Input placeholder="e.g. 30 Days, 8 Weeks" {...field} />
                         </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="language"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Language</FormLabel>
+                        <FormControl>
+                          <select
+                            className="w-full h-10 px-3 py-2 rounded-md border border-input bg-background"
+                            {...field}
+                          >
+                            {LANGUAGES.map((lang) => (
+                              <option key={lang} value={lang}>
+                                {lang}
+                              </option>
+                            ))}
+                          </select>
+                        </FormControl>
+                        <FormMessage />
                       </FormItem>
                     )}
                   />
@@ -366,28 +404,32 @@ const CreateCourse = () => {
                     name="category"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Category *</FormLabel>
+                        <FormLabel>Category</FormLabel>
                         <FormControl>
-                          <Input placeholder="Select category" {...field} />
+                          <Input placeholder="Enter course category" {...field} />
                         </FormControl>
+                        <FormMessage />
                       </FormItem>
                     )}
                   />
-                  
+
                   <FormField
                     control={form.control}
                     name="level"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Level *</FormLabel>
-                        <select
-                          className="w-full h-10 px-3 py-2 rounded-md border border-input"
-                          {...field}
-                        >
-                          <option value="Beginner">Beginner</option>
-                          <option value="Intermediate">Intermediate</option>
-                          <option value="Advanced">Advanced</option>
-                        </select>
+                        <FormControl>
+                          <select
+                            className="w-full h-10 px-3 py-2 rounded-md border border-input bg-background"
+                            {...field}
+                          >
+                            <option value="Beginner">Beginner</option>
+                            <option value="Intermediate">Intermediate</option>
+                            <option value="Advanced">Advanced</option>
+                          </select>
+                        </FormControl>
+                        <FormMessage />
                       </FormItem>
                     )}
                   />

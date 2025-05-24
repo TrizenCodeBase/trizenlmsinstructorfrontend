@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
@@ -83,7 +82,13 @@ const CourseCard = ({ course, onEdit, onDelete, isDeleting }: CourseCardProps) =
             <Users className="h-4 w-4 mr-1" />
             <span>{course.students || 0}</span>
           </div>
-          <span>{course.level} • {course.duration}</span>
+          <div className="flex items-center gap-2">
+            <span>{course.level}</span>
+            <span>•</span>
+            <span>{course.duration}</span>
+            <span>•</span>
+            <span>{course.language}</span>
+          </div>
         </div>
       </CardContent>
       <CardFooter className="p-4 pt-0 flex gap-2">
