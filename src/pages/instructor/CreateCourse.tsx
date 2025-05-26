@@ -23,6 +23,7 @@ import { UploadedFile } from '@/components/VideoUploader';
 import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/contexts/AuthContext';
+import MCQForm from '@/components/instructor/MCQForm';
 
 const TABS = [
   { id: "basic-info", label: "Basic Information" },
@@ -556,6 +557,29 @@ const CreateCourse = () => {
                           </div>
                           
                           <div>
+                            <Label className="mb-2 block">MCQ Questions</Label>
+                            <MCQForm
+                              mcqs={roadmapDays[index]?.mcqs || []}
+                              onMCQChange={(updatedMCQs) => {
+                                const updatedRoadmap = [...form.getValues().roadmap];
+                                if (!updatedRoadmap[index]) {
+                                  updatedRoadmap[index] = { 
+                                    day: index + 1, 
+                                    topics: "", 
+                                    video: "", 
+                                    mcqs: updatedMCQs 
+                                  };
+                                } else {
+                                  updatedRoadmap[index].mcqs = updatedMCQs;
+                                }
+                                form.setValue('roadmap', updatedRoadmap);
+                                setRoadmapDays(updatedRoadmap);
+                              }}
+                              dayIndex={index}
+                            />
+                          </div>
+                          
+                          <div>
                             <Label className="mb-2 block">Code Content</Label>
                             <div className="flex items-center justify-between">
                               <p className="text-sm text-muted-foreground">Add code examples or snippets for this day's content</p>
@@ -563,34 +587,6 @@ const CreateCourse = () => {
                                 <Code className="h-4 w-4 mr-2" /> Edit Code Content
                               </Button>
                             </div>
-                          </div>
-                          
-                          <div>
-                            <div className="flex items-center justify-between mb-4">
-                              <Label>MCQ Questions for Day {day.day}</Label>
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                onClick={() => handleAddQuestion(index)}
-                                type="button"
-                              >
-                                <Plus className="h-4 w-4 mr-2" /> Add Question
-                              </Button>
-                            </div>
-                            
-                            {form.getValues().roadmap[index]?.mcqs && form.getValues().roadmap[index]?.mcqs.length > 0 ? (
-                              <div className="space-y-4">
-                                {/* Question editing UI would go here */}
-                                <p>Questions available: {form.getValues().roadmap[index]?.mcqs.length}</p>
-                              </div>
-                            ) : (
-                              <div className="text-center py-6 border border-dashed rounded-md">
-                                <AlertCircle className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                                <p className="text-sm text-muted-foreground">
-                                  No questions added yet. Click "Add Question" to start creating quiz questions.
-                                </p>
-                              </div>
-                            )}
                           </div>
                         </div>
                       </CardContent>
