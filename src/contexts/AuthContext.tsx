@@ -1,6 +1,6 @@
-
 import React, { createContext, useContext, ReactNode, useState, useEffect } from 'react';
-import axios from '@/lib/axios';
+import { isAxiosError } from 'axios';
+import axiosInstance from '@/lib/axios';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 
@@ -54,37 +54,36 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   // Check if user is already logged in on mount
   useEffect(() => {
+    const checkAuth = async () => {
     const token = localStorage.getItem('auth_token');
     
     if (token) {
-      // Verify the token with the backend
-      axios.get('/api/auth/me')
-        .then(response => {
-          if (response.data && response.data.user) {
-            setUser(response.data.user);
-          } else {
-            // If backend returns invalid response, clear token
+        try {
+          const response = await axiosInstance.get('/api/auth/me');
+          if (response.data) {
+            setUser(response.data);
+          }
+        } catch (error) {
+          // Only clear token if it's invalid
+          if (isAxiosError(error) && error.response?.status === 401) {
             localStorage.removeItem('auth_token');
           }
-        })
-        .catch(() => {
-          // If token is invalid, clear it
-          localStorage.removeItem('auth_token');
-        })
-        .finally(() => {
-          setLoading(false);
-        });
-    } else {
+          console.error('Auth check error:', error);
+        }
+      }
       setLoading(false);
-    }
+    };
+
+    checkAuth();
   }, []);
 
   const login = async (email: string, password: string) => {
     try {
-      const response = await axios.post('/api/auth/login', { email, password });
+      const response = await axiosInstance.post('/api/auth/login', { email, password });
       
       // Store token and user data
       localStorage.setItem('auth_token', response.data.token);
@@ -95,10 +94,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         description: `Welcome back, ${response.data.user.name}!`
       });
       
+      // Navigate based on user role
+      if (response.data.user.role === 'instructor') {
+        navigate('/instructor');
+      }
+      
       return;
     } catch (error: any) {
       console.error("Login error:", error);
-      // Handle specific error cases
       const errorMessage = error.response?.data?.message || 'Login failed';
       throw new Error(errorMessage);
     }
@@ -123,7 +126,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         ? '/api/auth/instructor-signup' 
         : '/api/auth/signup';
       
-      const response = await axios.post(endpoint, signupData);
+      const response = await axiosInstance.post(endpoint, signupData);
       
       // Store token and user data
       localStorage.setItem('auth_token', response.data.token);

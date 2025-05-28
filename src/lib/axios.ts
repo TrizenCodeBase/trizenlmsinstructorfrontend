@@ -19,17 +19,18 @@ instance.interceptors.request.use((config) => {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
+}, (error) => {
+  return Promise.reject(error);
 });
 
 // Add response interceptor for error handling
 instance.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Handle common errors like 401 (unauthorized)
-    if (error.response?.status === 401) {
-      // Clear token and redirect to login
+    // Only handle 401 errors for non-auth endpoints
+    if (error.response?.status === 401 && !error.config.url?.includes('/auth')) {
+      // Clear token and redirect to login only if not already on login page
       localStorage.removeItem('auth_token');
-      // Force reload to clear app state
       if (window.location.pathname !== '/login') {
         window.location.href = '/login';
       }

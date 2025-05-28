@@ -14,7 +14,7 @@ import {
   AlertCircle,
   Trash2
 } from 'lucide-react';
-import { useCreateCourse } from '@/services/courseService';
+import { useCreateCourse, checkTitleAvailability } from '@/services/courseService';
 import { toast } from 'sonner';
 import { Form, FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
@@ -24,6 +24,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/contexts/AuthContext';
 import MCQForm from '@/components/instructor/MCQForm';
+import { useQueryClient } from '@tanstack/react-query';
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 
 const TABS = [
   { id: "basic-info", label: "Basic Information" },
@@ -31,6 +34,19 @@ const TABS = [
   { id: "course-roadmap", label: "Course Roadmap" },
   { id: "media-resources", label: "Media & Resources" },
 ];
+
+const CATEGORIES = [
+  'Web Development',
+  'Mobile Development',
+  'Data Science',
+  'Machine Learning',
+  'Cloud Computing',
+  'DevOps',
+  'Cybersecurity',
+  'Blockchain',
+  'Design',
+  'Digital Marketing'
+] as const;
 
 const LANGUAGES = [
   'English',
@@ -45,55 +61,93 @@ const LANGUAGES = [
   'Punjabi'
 ] as const;
 
-type CourseFormData = {
-  title: string;
-  description: string;
-  longDescription: string;
-  instructor: string;
-  duration: string;
-  category: string;
-  language: string;
-  level: "Beginner" | "Intermediate" | "Advanced";
-  image: string;
-  skills: string[];
-  roadmap: {
+const courseFormSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  description: z.string().min(1, "Description is required"),
+  longDescription: z.string().optional(),
+  instructor: z.string().min(1, "Instructor name is required"),
+  duration: z.string().min(1, "Duration is required"),
+  category: z.string().min(1, "Category is required"),
+  language: z.string().min(1, "Language is required"),
+  level: z.enum(["Beginner", "Intermediate", "Advanced", "Beginner to Intermediate"]),
+  image: z.string().min(1, "Course image URL is required"),
+  skills: z.array(z.string()).default([]),
+  roadmap: z.array(z.object({
+    day: z.number(),
+    topics: z.string().min(1, "Topics are required for each day"),
+    video: z.string().min(1, "Video is required for each day"),
+    mcqs: z.array(z.object({
+      question: z.string(),
+      options: z.array(z.object({
+        text: z.string(),
+        isCorrect: z.boolean()
+      })),
+      explanation: z.string().optional()
+    })).default([]),
+    transcript: z.string().default(""),
+    notes: z.string().default("")
+  })).min(1, "At least one day is required"),
+  courseAccess: z.boolean().default(true)
+});
+
+type CourseFormData = z.infer<typeof courseFormSchema>;
+
+type RoadmapDay = {
     day: number;
     topics: string;
     video: string;
-    transcript?: string;
-    notes?: string;
-    mcqs: { question: string; options: { text: string; isCorrect: boolean }[] }[];
-    code?: string;
-    language?: string;
-  }[];
-  courseAccess: boolean;
+  mcqs: MCQQuestion[];
+  transcript: string;
+  notes: string;
+};
+
+type MCQQuestion = {
+  question: string;
+  options: MCQOption[];
+  explanation?: string;
+};
+
+type MCQOption = {
+  text: string;
+  isCorrect: boolean;
 };
 
 const CreateCourse = () => {
   const navigate = useNavigate();
+  const { user, isAuthenticated } = useAuth();
   const [activeTab, setActiveTab] = useState<string>("basic-info");
-  const [roadmapDays, setRoadmapDays] = useState<any[]>([{ day: 1, topics: "", video: "", mcqs: [] }]);
+  const [roadmapDays, setRoadmapDays] = useState<RoadmapDay[]>([{ 
+    day: 1, 
+    topics: "", 
+    video: "", 
+    mcqs: [],
+    transcript: "",
+    notes: ""
+  }]);
   const [uploadedFile, setUploadedFile] = useState<UploadedFile | null>(null);
-  const { user } = useAuth();
+  const [newSkill, setNewSkill] = useState("");
   const lastDayRef = useRef<HTMLDivElement>(null);
+  const queryClient = useQueryClient();
   
   const { mutate: createCourse, isPending } = useCreateCourse();
   
   const form = useForm<CourseFormData>({
+    resolver: zodResolver(courseFormSchema),
     defaultValues: {
       title: "",
       description: "",
       longDescription: "",
-      instructor: user?.name || "", // Set instructor name from logged in user
+      instructor: user?.name || "",
       duration: "",
       category: "",
-      language: "English", // Default to English
+      language: "English",
       level: "Beginner",
-      image: "https://placehold.co/600x400", // Default placeholder image
+      image: "",
       skills: [],
-      roadmap: [{ day: 1, topics: "", video: "", mcqs: [] }],
+      roadmap: roadmapDays,
       courseAccess: true,
     },
+    mode: "onChange"
   });
 
   // Update instructor name when user data is available
@@ -103,16 +157,36 @@ const CreateCourse = () => {
     }
   }, [user, form]);
 
-  // Keep the roadmap state in sync with form state
+  // Keep roadmap state synchronized
   useEffect(() => {
-    const currentRoadmap = form.getValues().roadmap;
-    console.log('Roadmap updated:', currentRoadmap);
-    if (currentRoadmap) {
-      setRoadmapDays([...currentRoadmap]);
+    const subscription = form.watch((value, { name }) => {
+      if (name === 'roadmap' && value.roadmap) {
+        const typedRoadmap = value.roadmap.map(day => ({
+          day: day.day || 1,
+          topics: day.topics || "",
+          video: day.video || "",
+          mcqs: (day.mcqs || []).map(mcq => ({
+            question: mcq.question || "",
+            options: (mcq.options || []).map(opt => ({
+              text: opt.text || "",
+              isCorrect: !!opt.isCorrect
+            })),
+            explanation: mcq.explanation
+          })),
+          transcript: day.transcript || "",
+          notes: day.notes || ""
+        }));
+        console.log('Roadmap updated in form:', typedRoadmap);
+        setRoadmapDays(typedRoadmap);
     }
-  }, [form.watch('roadmap')]);
+    });
+    return () => subscription.unsubscribe();
+  }, [form]);
 
   const handleTabChange = (value: string) => {
+    const currentFormState = form.getValues();
+    console.log('Current form state before tab change:', currentFormState);
+    console.log('Current roadmap state:', currentFormState.roadmap);
     setActiveTab(value);
   };
   
@@ -128,130 +202,135 @@ const CreateCourse = () => {
     if (currentIndex > 0) {
       setActiveTab(TABS[currentIndex - 1].id);
     } else {
-      // If on first tab, go back to courses list
       navigate('/instructor/courses');
     }
   };
   
   const handleAddDay = () => {
-    const updatedRoadmap = [...form.getValues().roadmap];
-    updatedRoadmap.push({ 
-      day: updatedRoadmap.length + 1, 
+    const newDay: RoadmapDay = {
+      day: roadmapDays.length + 1,
       topics: "", 
       video: "", 
-      mcqs: [] 
-    });
+      mcqs: [],
+      transcript: "",
+      notes: ""
+    };
+    
+    const updatedRoadmap = [...roadmapDays, newDay];
     form.setValue('roadmap', updatedRoadmap);
     setRoadmapDays(updatedRoadmap);
-    
-    // Scroll to the newly added day after a short delay to ensure the element is rendered
-    setTimeout(() => {
-      lastDayRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 100);
   };
   
   const handleVideoUpload = (fileInfo: UploadedFile, dayIndex: number) => {
+    console.log('Uploading video for day:', dayIndex, fileInfo);
     setUploadedFile(fileInfo);
     
-    // Update the form data with the new video URL
-    const updatedRoadmap = [...form.getValues().roadmap];
-    if (!updatedRoadmap[dayIndex]) {
-      updatedRoadmap[dayIndex] = { day: dayIndex + 1, topics: "", video: fileInfo.videoUrl, mcqs: [] };
-    } else {
-      updatedRoadmap[dayIndex].video = fileInfo.videoUrl;
-    }
+    const updatedRoadmap = roadmapDays.map((day, idx): RoadmapDay => ({
+      day: idx + 1,
+      topics: day.topics,
+      video: idx === dayIndex ? fileInfo.videoUrl : day.video,
+      mcqs: day.mcqs,
+      transcript: day.transcript,
+      notes: day.notes
+    }));
     
     form.setValue('roadmap', updatedRoadmap);
-    toast.success(`Video uploaded for Day ${dayIndex + 1}`);
+    setRoadmapDays(updatedRoadmap);
   };
   
   const handleTopicChange = (event: React.ChangeEvent<HTMLTextAreaElement>, dayIndex: number) => {
-    const updatedRoadmap = [...form.getValues().roadmap];
-    if (!updatedRoadmap[dayIndex]) {
-      updatedRoadmap[dayIndex] = { day: dayIndex + 1, topics: event.target.value, video: "", mcqs: [] };
-    } else {
-      updatedRoadmap[dayIndex].topics = event.target.value;
-    }
-    form.setValue('roadmap', updatedRoadmap);
+    const updatedRoadmap = roadmapDays.map((day, idx): RoadmapDay => ({
+      day: idx + 1,
+      topics: idx === dayIndex ? event.target.value : day.topics,
+      video: day.video,
+      mcqs: day.mcqs,
+      transcript: day.transcript,
+      notes: day.notes
+    }));
     
-    // Update the local state to ensure the UI reflects the changes
-    const newRoadmapDays = [...roadmapDays];
-    if (!newRoadmapDays[dayIndex]) {
-      newRoadmapDays[dayIndex] = { day: dayIndex + 1, topics: event.target.value, video: "", mcqs: [] };
-    } else {
-      newRoadmapDays[dayIndex].topics = event.target.value;
-    }
-    setRoadmapDays(newRoadmapDays);
+    form.setValue('roadmap', updatedRoadmap, {
+      shouldValidate: true,
+      shouldDirty: true,
+      shouldTouch: true
+    });
+    setRoadmapDays(updatedRoadmap);
   };
   
   const handleAddQuestion = (dayIndex: number) => {
-    const updatedRoadmap = [...form.getValues().roadmap];
-    if (!updatedRoadmap[dayIndex]) {
-      updatedRoadmap[dayIndex] = { 
-        day: dayIndex + 1, 
-        topics: "", 
-        video: "", 
-        mcqs: [{ 
+    const currentRoadmap = [...form.getValues().roadmap];
+    const newQuestion: MCQQuestion = {
           question: "", 
           options: [
             { text: "", isCorrect: false },
             { text: "", isCorrect: false },
             { text: "", isCorrect: false },
             { text: "", isCorrect: false }
-          ] 
-        }] 
+      ],
+      explanation: ""
+    };
+
+    const updatedRoadmap: RoadmapDay[] = currentRoadmap.map((day, idx): RoadmapDay => {
+      const validatedMCQs = (day.mcqs || []).map((mcq): MCQQuestion => ({
+        question: mcq.question || "",
+        options: (mcq.options || []).map(opt => ({
+          text: opt.text || "",
+          isCorrect: !!opt.isCorrect
+        })),
+        explanation: mcq.explanation || ""
+      }));
+
+      if (idx === dayIndex) {
+        return {
+          day: idx + 1,
+          topics: day.topics || "",
+          video: day.video || "",
+          mcqs: [...validatedMCQs, newQuestion],
+          transcript: day.transcript || "",
+          notes: day.notes || ""
+        };
+      }
+      return {
+        day: idx + 1,
+        topics: day.topics || "",
+        video: day.video || "",
+        mcqs: validatedMCQs,
+        transcript: day.transcript || "",
+        notes: day.notes || ""
       };
-    } else {
-      updatedRoadmap[dayIndex].mcqs.push({ 
-        question: "", 
-        options: [
-          { text: "", isCorrect: false },
-          { text: "", isCorrect: false },
-          { text: "", isCorrect: false },
-          { text: "", isCorrect: false }
-        ] 
-      });
-    }
+    });
     
     form.setValue('roadmap', updatedRoadmap);
     setRoadmapDays(updatedRoadmap);
   };
   
   const handleDeleteDay = (event: React.MouseEvent, indexToDelete: number) => {
-    // Prevent event bubbling and default behavior
     event.preventDefault();
     event.stopPropagation();
 
-    const currentRoadmap = [...form.getValues().roadmap];
-    console.log('Before deletion:', currentRoadmap);
-
-    // Prevent deleting if it's the last day
-    if (currentRoadmap.length <= 1) {
+    if (roadmapDays.length <= 1) {
       toast.error("Cannot delete the last day. A course must have at least one day.");
       return;
     }
 
     try {
-      // Create new array without the deleted day
-      const updatedRoadmap = currentRoadmap.filter((_, index) => index !== indexToDelete);
-      console.log('After deletion:', updatedRoadmap);
-      
-      // Update the day numbers for remaining days
-      updatedRoadmap.forEach((day, index) => {
-        day.day = index + 1;
-      });
+      const updatedRoadmap = roadmapDays
+        .filter((_, index) => index !== indexToDelete)
+        .map((day, index): RoadmapDay => ({
+          day: index + 1,
+          topics: day.topics,
+          video: day.video,
+          mcqs: day.mcqs,
+          transcript: day.transcript,
+          notes: day.notes
+        }));
 
-      // First update the local state
       setRoadmapDays(updatedRoadmap);
-
-      // Then update the form state
       form.setValue('roadmap', updatedRoadmap, { 
         shouldValidate: true,
         shouldDirty: true,
         shouldTouch: true
       });
 
-      console.log('Final roadmap:', form.getValues().roadmap);
       toast.success("Day deleted successfully");
     } catch (error) {
       console.error('Error deleting day:', error);
@@ -259,17 +338,98 @@ const CreateCourse = () => {
     }
   };
   
-  const onSubmit = (data: CourseFormData) => {
-    // Process form data and create the course
-    createCourse(data, {
+  const handleAddSkill = () => {
+    if (newSkill.trim()) {
+      const currentSkills = form.getValues().skills || [];
+      if (!currentSkills.includes(newSkill.trim())) {
+        form.setValue('skills', [...currentSkills, newSkill.trim()]);
+        setNewSkill("");
+      }
+    }
+  };
+  
+  const handleRemoveSkill = (skillToRemove: string) => {
+    const currentSkills = form.getValues().skills || [];
+    form.setValue('skills', currentSkills.filter(skill => skill !== skillToRemove));
+  };
+
+  const handleMCQChange = (updatedMCQs: MCQQuestion[], dayIndex: number) => {
+    const updatedRoadmap = form.getValues().roadmap.map((day, idx): RoadmapDay => ({
+      day: idx + 1,
+      topics: day.topics || "",
+      video: day.video || "",
+      mcqs: updatedMCQs,
+      transcript: day.transcript || "",
+      notes: day.notes || ""
+    }));
+    
+    form.setValue('roadmap', updatedRoadmap);
+    setRoadmapDays(updatedRoadmap);
+  };
+
+  const onSubmit = async (data: CourseFormData) => {
+    try {
+      console.log('Submitting form with data:', data);
+      
+      // Validate roadmap data
+      const validatedRoadmap = data.roadmap.map((day, index): RoadmapDay => {
+        if (!day.topics || !day.video) {
+          throw new Error(`Day ${index + 1} is missing required content (topics or video)`);
+        }
+        
+        return {
+          day: day.day || index + 1,
+          topics: day.topics,
+          video: day.video,
+          mcqs: (day.mcqs || []).map(mcq => ({
+            question: mcq.question || "",
+            options: (mcq.options || []).map(opt => ({
+              text: opt.text || "",
+              isCorrect: !!opt.isCorrect
+            })),
+            explanation: mcq.explanation || ""
+          })),
+          transcript: day.transcript || "",
+          notes: day.notes || ""
+        };
+      });
+
+      // Prepare the course data
+      const courseData = {
+        ...data,
+        roadmap: validatedRoadmap,
+        skills: data.skills || [],
+        courseAccess: data.courseAccess ?? true
+      };
+
+      await createCourse(courseData, {
       onSuccess: () => {
         toast.success("Course created successfully!");
         navigate('/instructor/courses');
       },
-      onError: (error) => {
-        toast.error("Failed to create course: " + (error as Error).message);
+        onError: (error: any) => {
+          console.error('Course creation error:', error);
+          toast.error(error.message || 'Failed to create course');
+        }
+      });
+    } catch (error: any) {
+      console.error('Form submission error:', error);
+      toast.error(error.message || 'Please fill in all required fields');
       }
-    });
+  };
+
+  // Add title validation on blur
+  const handleTitleBlur = async (event: React.FocusEvent<HTMLInputElement>) => {
+    const title = event.target.value;
+    if (title) {
+      const isAvailable = await checkTitleAvailability(title);
+      if (!isAvailable) {
+        form.setError('title', {
+          type: 'manual',
+          message: 'This course title is already taken. Please choose a different title.'
+        });
+      }
+    }
   };
   
   return (
@@ -321,8 +481,16 @@ const CreateCourse = () => {
                     <FormItem>
                       <FormLabel>Course Title *</FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter course title" {...field} />
+                        <Input 
+                          placeholder="Enter course title" 
+                          {...field} 
+                          onBlur={(e) => {
+                            field.onBlur();
+                            handleTitleBlur(e);
+                          }}
+                        />
                       </FormControl>
+                      <FormMessage />
                     </FormItem>
                   )}
                 />
@@ -405,9 +573,19 @@ const CreateCourse = () => {
                     name="category"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Category</FormLabel>
+                        <FormLabel>Category *</FormLabel>
                         <FormControl>
-                          <Input placeholder="Enter course category" {...field} />
+                          <select
+                            className="w-full h-10 px-3 py-2 rounded-md border border-input bg-background"
+                            {...field}
+                          >
+                            <option value="">Select a category</option>
+                            {CATEGORIES.map((category) => (
+                              <option key={category} value={category}>
+                                {category}
+                              </option>
+                            ))}
+                          </select>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -428,6 +606,7 @@ const CreateCourse = () => {
                             <option value="Beginner">Beginner</option>
                             <option value="Intermediate">Intermediate</option>
                             <option value="Advanced">Advanced</option>
+                            <option value="Beginner to Intermediate">Beginner to Intermediate</option>
                           </select>
                         </FormControl>
                         <FormMessage />
@@ -470,12 +649,46 @@ const CreateCourse = () => {
                 <div className="space-y-4">
                   <Label>Skills Students Will Learn</Label>
                   <div className="flex flex-wrap gap-2">
-                    <Input placeholder="Add a skill" className="max-w-xs" />
-                    <Button variant="outline" type="button">
+                    <Input 
+                      placeholder="Add a skill" 
+                      className="max-w-xs"
+                      value={newSkill}
+                      onChange={(e) => setNewSkill(e.target.value)}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleAddSkill();
+                        }
+                      }}
+                    />
+                    <Button 
+                      variant="outline" 
+                      type="button"
+                      onClick={handleAddSkill}
+                    >
                       <Plus className="h-4 w-4 mr-2" /> Add
                     </Button>
                   </div>
+                  <div className="flex flex-wrap gap-2">
+                    {form.watch('skills')?.map((skill, index) => (
+                      <div 
+                        key={index} 
+                        className="bg-secondary px-3 py-1 rounded-full text-sm flex items-center gap-2"
+                      >
+                        {skill}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveSkill(skill)}
+                          className="text-red-500 hover:text-red-700"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  {(!form.watch('skills') || form.watch('skills').length === 0) && (
                   <p className="text-sm text-muted-foreground">No skills added yet</p>
+                  )}
                 </div>
               </div>
               
@@ -530,7 +743,7 @@ const CreateCourse = () => {
                             <Label className="mb-2 block">Topics *</Label>
                             <Textarea 
                               placeholder="Topics covered on this day"
-                              value={roadmapDays[index]?.topics || ""}
+                              value={day.topics || ""}
                               onChange={(e) => handleTopicChange(e, index)}
                               className="w-full"
                             />
@@ -541,6 +754,12 @@ const CreateCourse = () => {
                             <div className="mt-2">
                               <VideoUploader onUploadComplete={(fileInfo) => handleVideoUpload(fileInfo, index)} />
                             </div>
+                            {day.video && (
+                              <div className="mt-2 p-2 bg-secondary/50 rounded">
+                                <Label className="text-sm text-muted-foreground">Current video:</Label>
+                                <div className="text-sm break-all mt-1">{day.video}</div>
+                              </div>
+                            )}
                             <p className="text-xs text-muted-foreground mt-1">
                               Supported formats: MP4, WebM, etc.
                             </p>
@@ -559,22 +778,8 @@ const CreateCourse = () => {
                           <div>
                             <Label className="mb-2 block">MCQ Questions</Label>
                             <MCQForm
-                              mcqs={roadmapDays[index]?.mcqs || []}
-                              onMCQChange={(updatedMCQs) => {
-                                const updatedRoadmap = [...form.getValues().roadmap];
-                                if (!updatedRoadmap[index]) {
-                                  updatedRoadmap[index] = { 
-                                    day: index + 1, 
-                                    topics: "", 
-                                    video: "", 
-                                    mcqs: updatedMCQs 
-                                  };
-                                } else {
-                                  updatedRoadmap[index].mcqs = updatedMCQs;
-                                }
-                                form.setValue('roadmap', updatedRoadmap);
-                                setRoadmapDays(updatedRoadmap);
-                              }}
+                              mcqs={day.mcqs || []}
+                              onMCQChange={(updatedMCQs) => handleMCQChange(updatedMCQs, index)}
                               dayIndex={index}
                             />
                           </div>
@@ -613,10 +818,20 @@ const CreateCourse = () => {
                 <h2 className="text-xl font-semibold">Media & Resources</h2>
                 
                 <div className="space-y-3">
-                  <Label>Course Image URL</Label>
-                  <Input placeholder="Enter image URL (Google Drive or direct link)" />
-                  
-                  <div className="text-sm text-muted-foreground space-y-1">
+                  <FormField
+                    control={form.control}
+                    name="image"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Course Image URL *</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="Enter image URL (Google Drive or direct link)" 
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          <div className="space-y-2">
                     <p>For Google Drive images:</p>
                     <ol className="list-decimal ml-5">
                       <li>Upload image to Google Drive</li>
@@ -625,7 +840,29 @@ const CreateCourse = () => {
                       <li>Copy link and paste here</li>
                     </ol>
                   </div>
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
+
+                {/* Preview current image if available */}
+                {form.watch('image') && (
+                  <div className="mt-4">
+                    <Label className="mb-2 block">Image Preview</Label>
+                    <div className="relative w-full max-w-md h-48 rounded-lg overflow-hidden border">
+                      <img 
+                        src={form.watch('image')} 
+                        alt="Course preview" 
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.src = "https://placehold.co/600x400?text=Invalid+Image+URL";
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
               
               <div className="flex justify-between pt-4">
@@ -633,7 +870,10 @@ const CreateCourse = () => {
                   <ChevronLeft className="mr-2 h-4 w-4" />
                   Previous
                 </Button>
-                <Button type="submit" disabled={isPending}>
+                <Button 
+                  type="submit" 
+                  disabled={isPending || !form.formState.isValid}
+                >
                   {isPending ? "Creating..." : "Create Course"}
                 </Button>
               </div>

@@ -10,6 +10,7 @@ export interface MCQOption {
 export interface MCQQuestion {
   question: string;
   options: MCQOption[];
+  explanation?: string;
 }
 
 export interface RoadmapDay {
@@ -29,7 +30,7 @@ export interface Course {
   description: string;
   longDescription?: string;
   duration: string;
-  level: "Beginner" | "Intermediate" | "Advanced";
+  level: "Beginner" | "Intermediate" | "Advanced" | "Beginner to Intermediate";
   category: string;
   language: string;
   image: string;
@@ -76,8 +77,6 @@ export const useInstructorCourses = () => {
         const response = await axios.get('/api/instructor/courses');
         return response.data;
       } catch (error) {
-        console.error('Failed to fetch instructor courses:', error);
-        // Return mock data as fallback if API fails
         return mockCourses;
       }
     }
@@ -93,8 +92,6 @@ export const useCourseDetails = (courseId?: string) => {
         const response = await axios.get(`/api/courses/${courseId}`);
         return response.data;
       } catch (error) {
-        console.error(`Failed to fetch course ${courseId}:`, error);
-        // Return mock course as fallback if API fails
         return mockCourses.find(course => course._id === courseId) || null;
       }
     },
@@ -253,11 +250,36 @@ export const useCreateCourse = () => {
   return useMutation({
     mutationFn: async (courseData: Partial<Course>) => {
       try {
-        const response = await axios.post('/api/courses', courseData);
+        // Check authentication token
+        const token = localStorage.getItem('auth_token');
+        if (!token) {
+          throw new Error('Authentication required. Please log in.');
+        }
+
+        // Format the course data
+        const formattedCourseData = {
+          ...courseData,
+          rating: 0,
+          students: 0,
+          skills: courseData.skills || [],
+          courses: [],
+          testimonials: [],
+          modules: [],
+          reviews: [],
+          courseAccess: courseData.courseAccess ?? true
+        };
+
+        const response = await axios.post('/api/courses', formattedCourseData, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
         return response.data.course;
-      } catch (error) {
+      } catch (error: any) {
         console.error('Failed to create course:', error);
-        throw new Error('Failed to create course. Please try again.');
+        throw new Error(error.response?.data?.message || error.message || 'Failed to create course');
       }
     },
     onSuccess: () => {
@@ -303,4 +325,14 @@ export const useDeleteCourse = () => {
       queryClient.invalidateQueries({ queryKey: ['instructor-courses'] });
     }
   });
+};
+
+export const checkTitleAvailability = async (title: string): Promise<boolean> => {
+  try {
+    const response = await axios.get(`/api/courses/check-title/${encodeURIComponent(title)}`);
+    return response.data.available;
+  } catch (error) {
+    console.error('Failed to check title availability:', error);
+    return false;
+  }
 };

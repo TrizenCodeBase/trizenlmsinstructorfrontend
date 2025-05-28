@@ -33,6 +33,19 @@ const TABS = [
   { id: "media-resources", label: "Media & Resources" },
 ];
 
+const CATEGORIES = [
+  'Web Development',
+  'Mobile Development',
+  'Data Science',
+  'Machine Learning',
+  'Cloud Computing',
+  'DevOps',
+  'Cybersecurity',
+  'Blockchain',
+  'Design',
+  'Digital Marketing'
+] as const;
+
 const LANGUAGES = [
   'English',
   'Hindi',
@@ -54,9 +67,10 @@ type CourseFormData = {
   duration: string;
   category: string;
   language: string;
-  level: "Beginner" | "Intermediate" | "Advanced";
+  level: "Beginner" | "Intermediate" | "Advanced" | "Beginner to Intermediate";
   image: string;
   skills: string[];
+  rating: number;
   roadmap: {
     day: number;
     topics: string;
@@ -78,6 +92,7 @@ const EditCourse = () => {
   const [uploadedFile, setUploadedFile] = useState<UploadedFile | null>(null);
   const { user } = useAuth();
   const lastDayRef = useRef<HTMLDivElement>(null);
+  const [newSkill, setNewSkill] = useState("");
   
   const { data: courseData, isLoading: isLoadingCourse } = useCourseDetails(courseId);
   const { mutate: updateCourse, isPending } = useUpdateCourse();
@@ -277,6 +292,21 @@ const EditCourse = () => {
     }
   }, [form.watch('roadmap')]);
   
+  const handleAddSkill = () => {
+    if (newSkill.trim()) {
+      const currentSkills = form.getValues().skills || [];
+      if (!currentSkills.includes(newSkill.trim())) {
+        form.setValue('skills', [...currentSkills, newSkill.trim()]);
+        setNewSkill("");
+      }
+    }
+  };
+  
+  const handleRemoveSkill = (skillToRemove: string) => {
+    const currentSkills = form.getValues().skills || [];
+    form.setValue('skills', currentSkills.filter(skill => skill !== skillToRemove));
+  };
+  
   const onSubmit = (data: CourseFormData) => {
     // Update course with the form data
     if (!courseId) {
@@ -440,9 +470,19 @@ const EditCourse = () => {
                     name="category"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Category</FormLabel>
+                        <FormLabel>Category *</FormLabel>
                         <FormControl>
-                          <Input placeholder="Enter course category" {...field} />
+                          <select
+                            className="w-full h-10 px-3 py-2 rounded-md border border-input bg-background"
+                            {...field}
+                          >
+                            <option value="">Select a category</option>
+                            {CATEGORIES.map((category) => (
+                              <option key={category} value={category}>
+                                {category}
+                              </option>
+                            ))}
+                          </select>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -463,6 +503,7 @@ const EditCourse = () => {
                             <option value="Beginner">Beginner</option>
                             <option value="Intermediate">Intermediate</option>
                             <option value="Advanced">Advanced</option>
+                            <option value="Beginner to Intermediate">Beginner to Intermediate</option>
                           </select>
                         </FormControl>
                         <FormMessage />
@@ -505,15 +546,40 @@ const EditCourse = () => {
                 <div className="space-y-4">
                   <Label>Skills Students Will Learn</Label>
                   <div className="flex flex-wrap gap-2">
-                    <Input placeholder="Add a skill" className="max-w-xs" />
-                    <Button variant="outline" type="button">
+                    <Input 
+                      placeholder="Add a skill" 
+                      className="max-w-xs"
+                      value={newSkill}
+                      onChange={(e) => setNewSkill(e.target.value)}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleAddSkill();
+                        }
+                      }}
+                    />
+                    <Button 
+                      variant="outline" 
+                      type="button"
+                      onClick={handleAddSkill}
+                    >
                       <Plus className="h-4 w-4 mr-2" /> Add
                     </Button>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {form.getValues().skills?.map((skill, index) => (
-                      <div key={index} className="bg-secondary px-3 py-1 rounded-full text-sm">
+                      <div 
+                        key={index} 
+                        className="bg-secondary px-3 py-1 rounded-full text-sm flex items-center gap-2"
+                      >
                         {skill}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveSkill(skill)}
+                          className="text-red-500 hover:text-red-700"
+                        >
+                          ×
+                        </button>
                       </div>
                     ))}
                   </div>
@@ -692,11 +758,8 @@ const EditCourse = () => {
                         <FormControl>
                           <Input placeholder="Enter image URL (Google Drive or direct link)" {...field} />
                         </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <div className="text-sm text-muted-foreground space-y-1">
+                        <FormDescription>
+                          <div className="space-y-2">
                     <p>For Google Drive images:</p>
                     <ol className="list-decimal ml-5">
                       <li>Upload image to Google Drive</li>
@@ -705,6 +768,10 @@ const EditCourse = () => {
                       <li>Copy link and paste here</li>
                     </ol>
                   </div>
+                        </FormDescription>
+                      </FormItem>
+                    )}
+                  />
                 </div>
               </div>
               

@@ -1,12 +1,31 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import React, { useState, useEffect, useRef } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { Edit, Star, Mail, Phone, MapPin, BookOpen, Users, Clock, FileCheck } from 'lucide-react';
+import { motion } from 'framer-motion';
+import {
+  Edit,
+  Star,
+  Mail,
+  Phone,
+  MapPin,
+  BookOpen,
+  Users,
+  Clock,
+  FileCheck,
+  Linkedin,
+  Twitter,
+  Globe,
+  Award,
+  Briefcase,
+  GraduationCap,
+  User,
+  FileText
+} from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -27,35 +46,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
-import axios from '@/lib/axios';
-
-// Mock data as fallback if API fails
-const mockProfileData = {
-  id: '1234',
-  name: 'Dr. Jane Smith',
-  role: 'Senior Instructor',
-  email: 'jane.smith@example.com',
-  phone: '+1 (555) 123-4567',
-  location: 'San Francisco, CA',
-  specialty: 'Web Development',
-  experience: 8,
-  bio: 'Passionate educator with 8+ years of experience in web development and computer science. Specialized in frontend frameworks and interactive learning.',
-  profileCompletion: 85,
-  totalStudents: 432,
-  totalCourses: 6,
-  averageRating: 4.8,
-  recentReviews: [
-    { student: 'Alex P.', rating: 5, comment: 'Excellent teaching style!', date: '3 days ago' },
-    { student: 'Morgan T.', rating: 4, comment: 'Very knowledgeable and helpful.', date: '1 week ago' },
-  ],
-  teachingHours: 320,
-  avatar: null,
-  socialLinks: {
-    linkedin: 'https://linkedin.com/in/janesmith',
-    twitter: 'https://twitter.com/janesmith',
-    website: 'https://janesmith.dev'
-  }
-};
+import { fetchProfile, updateProfile, uploadProfilePicture, ProfileData } from '@/services/profileService';
+import { useInstructorCourses } from '@/services/courseService';
 
 // Form schema
 const profileFormSchema = z.object({
@@ -81,115 +73,114 @@ const profileFormSchema = z.object({
 const InstructorProfile: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [profileData, setProfileData] = useState(mockProfileData);
+  const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  
+  // Fetch instructor courses
+  const { data: instructorCourses = [] } = useInstructorCourses();
 
   // Initialize form with profile data
   const form = useForm<z.infer<typeof profileFormSchema>>({
     resolver: zodResolver(profileFormSchema),
     defaultValues: {
-      name: profileData.name,
-      role: profileData.role,
-      email: profileData.email,
-      phone: profileData.phone,
-      location: profileData.location,
-      specialty: profileData.specialty,
-      experience: profileData.experience,
-      bio: profileData.bio,
-      linkedin: profileData.socialLinks.linkedin,
-      twitter: profileData.socialLinks.twitter,
-      website: profileData.socialLinks.website,
+      name: '',
+      email: '',
+      phone: '',
+      location: '',
+      specialty: '',
+      experience: 0,
+      bio: '',
+      linkedin: '',
+      twitter: '',
+      website: '',
     },
   });
 
   // Fetch instructor profile data
   useEffect(() => {
-    const fetchProfile = async () => {
+    const fetchProfileData = async () => {
       setIsLoading(true);
       try {
-        // In a real app, this would fetch from the API
-        // Simulating API call with setTimeout
-        setTimeout(() => {
-          // Use user data from auth context if available, otherwise use mock data
-          if (user) {
-            setProfileData({
-              ...mockProfileData,
-              name: user.name || mockProfileData.name,
-              email: user.email || mockProfileData.email,
-            });
-          }
-          setIsLoading(false);
-        }, 500);
-      } catch (error) {
-        console.error('Error fetching profile data:', error);
+        const data = await fetchProfile();
+        setProfileData(data);
         
+        // Update form with fetched data
+        form.reset({
+          name: data.name,
+          email: data.email,
+          phone: data.instructorProfile?.phone || '',
+          location: data.instructorProfile?.location || '',
+          specialty: data.instructorProfile?.specialty || '',
+          experience: data.instructorProfile?.experience || 0,
+          bio: data.bio || data.instructorProfile?.bio || '',
+          linkedin: data.instructorProfile?.socialLinks?.linkedin || '',
+          twitter: data.instructorProfile?.socialLinks?.twitter || '',
+          website: data.instructorProfile?.socialLinks?.website || '',
+        });
+      } catch (error) {
         toast({
           title: 'Error',
-          description: 'Failed to load profile data from server. Using cached data instead.',
+          description: 'Failed to load profile data. Please try again.',
           variant: 'destructive',
         });
+      } finally {
         setIsLoading(false);
       }
     };
 
-    fetchProfile();
-  }, [user, toast]);
-
-  // Update form values when profile data changes
-  useEffect(() => {
-    form.reset({
-      name: profileData.name,
-      role: profileData.role,
-      email: profileData.email,
-      phone: profileData.phone,
-      location: profileData.location,
-      specialty: profileData.specialty,
-      experience: profileData.experience,
-      bio: profileData.bio,
-      linkedin: profileData.socialLinks.linkedin,
-      twitter: profileData.socialLinks.twitter,
-      website: profileData.socialLinks.website,
-    });
-  }, [profileData, form]);
+    fetchProfileData();
+  }, [form, toast, refreshTrigger]);
 
   // Handle form submission
   const onSubmit = async (values: z.infer<typeof profileFormSchema>) => {
     try {
       setIsLoading(true);
       
-      // In a real app, this would send to the API
-      // For now, just simulate an API call with a delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Update local state with form values
-      setProfileData({
-        ...profileData,
+      // Prepare the update data
+      const updateData: Partial<ProfileData> = {
         name: values.name,
-        role: values.role || profileData.role,
         email: values.email,
-        phone: values.phone || '',
-        location: values.location || '',
-        specialty: values.specialty,
-        experience: values.experience,
         bio: values.bio || '',
-        socialLinks: {
-          linkedin: values.linkedin || '',
-          twitter: values.twitter || '',
-          website: values.website || '',
-        }
-      });
+        displayName: values.name,
+      };
+
+      // Prepare instructor profile data
+      if (profileData?.role === 'instructor') {
+        updateData.instructorProfile = {
+          ...profileData.instructorProfile,
+          specialty: values.specialty || '',
+          experience: Number(values.experience) || 0,
+          phone: values.phone || '',
+          location: values.location || '',
+          socialLinks: {
+            linkedin: values.linkedin || '',
+            twitter: values.twitter || '',
+            website: values.website || '',
+          },
+          rating: profileData.instructorProfile?.rating || 0,
+          totalReviews: profileData.instructorProfile?.totalReviews || 0,
+          courses: profileData.instructorProfile?.courses || [],
+          teachingHours: profileData.instructorProfile?.teachingHours || 0
+        };
+      }
       
+      const updatedProfile = await updateProfile(updateData);
+      setProfileData(updatedProfile);
       setIsEditing(false);
+      setRefreshTrigger(prev => prev + 1);
+      
       toast({
-        title: 'Profile updated',
+        title: 'Success',
         description: 'Your profile has been updated successfully',
       });
-    } catch (error) {
-      console.error('Error updating profile:', error);
+    } catch (error: any) {
       toast({
         title: 'Error',
-        description: 'Failed to update profile. Please try again.',
+        description: error.response?.data?.message || error.response?.data?.error || 'Failed to update profile. Please try again.',
         variant: 'destructive',
       });
     } finally {
@@ -207,374 +198,652 @@ const InstructorProfile: React.FC = () => {
       .substring(0, 2);
   };
 
+  // Add profile picture upload handler
+  const handleProfilePictureUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsUploading(true);
+      const profilePicturePath = await uploadProfilePicture(file);
+      
+      // Update profile data with new profile picture
+      if (profileData) {
+        const updatedProfile = await updateProfile({
+          ...profileData,
+          profilePicture: profilePicturePath
+        });
+        setProfileData(updatedProfile);
+      }
+
+      toast({
+        title: 'Success',
+        description: 'Profile picture uploaded successfully',
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.response?.data?.message || 'Failed to upload profile picture',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  // Add trigger for file input click
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
+  };
+
+  const fadeIn = {
+    initial: { opacity: 0, y: 20 },
+    animate: { opacity: 1, y: 0 },
+    transition: { duration: 0.5 }
+  };
+
+  if (isLoading || !profileData) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#3F2B96]" />
+      </div>
+    );
+  }
+
+  // Calculate profile completion percentage
+  const calculateProfileCompletion = () => {
+    if (!profileData) return 0;
+    
+    const fields = [
+      profileData.name,
+      profileData.email,
+      profileData.instructorProfile?.phone,
+      profileData.instructorProfile?.location,
+      profileData.bio || profileData.instructorProfile?.bio,
+      profileData.instructorProfile?.specialty,
+      profileData.instructorProfile?.experience,
+      profileData.instructorProfile?.socialLinks?.linkedin,
+      profileData.instructorProfile?.socialLinks?.twitter,
+      profileData.instructorProfile?.socialLinks?.website,
+    ];
+    
+    const filledFields = fields.filter(field => field).length;
+    return Math.round((filledFields / fields.length) * 100);
+  };
+
   return (
-    <>
-      <Card className="w-full">
-        <CardHeader>
-          <div className="flex justify-between items-start">
-            <div>
-              <CardTitle className="text-2xl text-[#3F2B96]">Instructor Profile</CardTitle>
-              <CardDescription>Manage your instructor profile and information</CardDescription>
-            </div>
-            <Button variant="outline" size="sm" onClick={() => setIsEditing(true)} className="border-[#3F2B96] text-[#3F2B96] hover:bg-[#3F2B96]/5">
-              <Edit className="h-4 w-4 mr-2" />
-              Edit Profile
-            </Button>
-          </div>
-        </CardHeader>
-        
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Left column - Basic info */}
-            <div className="space-y-6">
-              <div className="flex flex-col items-center space-y-4">
-                <Avatar className="h-24 w-24">
-                  {profileData.avatar ? (
-                    <AvatarImage src={profileData.avatar} alt={profileData.name} />
-                  ) : (
-                    <AvatarFallback className="text-lg bg-[#3F2B96] text-white">
-                      {getInitials(profileData.name)}
-                    </AvatarFallback>
-                  )}
-                </Avatar>
-                
-                <div className="text-center">
-                  <h3 className="font-semibold text-xl text-[#3F2B96]">{profileData.name}</h3>
-                  <p className="text-muted-foreground">{profileData.role}</p>
+    <div className="min-h-screen bg-gradient-to-b from-white to-[#3F2B96]/5 bg-[url('/grid-pattern.svg')] bg-fixed">
+      <div className="container mx-auto p-6 space-y-8 max-w-7xl py-12">
+        <motion.div {...fadeIn} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Left Column - Profile Info */}
+          <Card className="lg:col-span-1 bg-white/80 backdrop-blur-sm shadow-xl hover:shadow-2xl transition-all duration-300 border-0">
+            <CardContent className="p-8">
+              <div className="flex flex-col items-center space-y-8">
+                {/* Profile Picture Section with improved styling */}
+                <div className="relative group">
+                  <div className="absolute -inset-0.5 bg-gradient-to-r from-[#3F2B96] to-[#6b5fbb] rounded-full opacity-50 group-hover:opacity-100 transition duration-300 blur"></div>
+                  <Avatar className="relative w-48 h-48 border-4 border-white shadow-xl">
+                    {profileData?.profilePicture ? (
+                      <AvatarImage 
+                        src={profileData.profilePicture} 
+                        alt={profileData.name}
+                        className="object-cover"
+                      />
+                    ) : (
+                      <AvatarFallback className="bg-[#3F2B96] text-4xl text-white">
+                        {getInitials(profileData?.name || '')}
+                      </AvatarFallback>
+                    )}
+                  </Avatar>
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    className="hidden"
+                    accept="image/*"
+                    onChange={handleProfilePictureUpload}
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-white"
+                    onClick={triggerFileInput}
+                    disabled={isUploading}
+                  >
+                    {isUploading ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#3F2B96]" />
+                    ) : (
+                      <Edit className="h-4 w-4" />
+                    )}
+                  </Button>
                 </div>
-                
-                <div className="w-full">
-                  <p className="text-sm text-muted-foreground mb-1 flex justify-between">
-                    <span>Profile Completion</span>
-                    <span>{profileData.profileCompletion}%</span>
-                  </p>
-                  <Progress value={profileData.profileCompletion} className="h-2 bg-gray-200" indicatorClassName="bg-[#3F2B96]" />
-                </div>
-              </div>
 
-              <div className="space-y-3">
-                <div className="flex items-center text-sm">
-                  <Mail className="h-4 w-4 mr-2 text-[#3F2B96]" />
-                  <span>{profileData.email}</span>
+                {/* Name and Role */}
+                <div className="text-center space-y-2">
+                  <h2 className="text-2xl font-bold text-[#3F2B96]">{profileData.name}</h2>
+                  <p className="text-gray-600">{profileData?.userId || 'TIN****'}</p>
+                  <Badge variant="outline" className="bg-[#3F2B96]/5 text-[#3F2B96]">
+                    {profileData.role.charAt(0).toUpperCase() + profileData.role.slice(1)}
+                  </Badge>
                 </div>
-                
-                {profileData.phone && (
-                  <div className="flex items-center text-sm">
-                    <Phone className="h-4 w-4 mr-2 text-[#3F2B96]" />
-                    <span>{profileData.phone}</span>
-                  </div>
-                )}
-                
-                {profileData.location && (
-                  <div className="flex items-center text-sm">
-                    <MapPin className="h-4 w-4 mr-2 text-[#3F2B96]" />
-                    <span>{profileData.location}</span>
-                  </div>
-                )}
-              </div>
 
-              <div>
-                <h4 className="text-sm font-medium mb-2 text-[#3F2B96]">Specialty</h4>
-                <Badge variant="outline" className="bg-[#3F2B96]/5 text-[#3F2B96] border-[#3F2B96]/20">{profileData.specialty}</Badge>
-                <div className="flex items-center mt-2 text-sm">
-                  <Clock className="h-4 w-4 mr-2 text-[#3F2B96]" />
-                  <span>{profileData.experience} Years Experience</span>
+                {/* Profile Completion */}
+                <div className="w-full space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Profile Completion</span>
+                    <span className="text-[#3F2B96] font-semibold">{calculateProfileCompletion()}%</span>
+                  </div>
+                  <Progress 
+                    value={calculateProfileCompletion()} 
+                    className="h-2 bg-gray-100" 
+                  />
+                </div>
+
+                {/* Contact Information */}
+                <div className="w-full space-y-4">
+                  <h3 className="font-semibold text-[#3F2B96] border-b pb-2">Contact Information</h3>
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-3 text-gray-600">
+                      <Mail className="h-5 w-5 text-[#3F2B96]" />
+                      <span className="text-sm">{profileData.email}</span>
+                    </div>
+                    <div className="flex items-center space-x-3 text-gray-600">
+                      <Phone className="h-5 w-5 text-[#3F2B96]" />
+                      <span className="text-sm">{profileData.instructorProfile?.phone || 'No phone number added'}</span>
+                    </div>
+                    <div className="flex items-center space-x-3 text-gray-600">
+                      <MapPin className="h-5 w-5 text-[#3F2B96]" />
+                      <span className="text-sm">{profileData.instructorProfile?.location || 'No location added'}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Social Links */}
+                <div className="w-full space-y-4">
+                  <h3 className="font-semibold text-[#3F2B96] border-b pb-2">Social Profiles</h3>
+                  <div className="space-y-3">
+                    {profileData.instructorProfile?.socialLinks?.linkedin && (
+                      <a 
+                        href={profileData.instructorProfile.socialLinks.linkedin}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center space-x-3 text-gray-600 hover:text-[#3F2B96] transition-colors"
+                      >
+                        <Linkedin className="h-5 w-5" />
+                        <span className="text-sm">LinkedIn Profile</span>
+                      </a>
+                    )}
+                    {profileData.instructorProfile?.socialLinks?.twitter && (
+                      <a 
+                        href={profileData.instructorProfile.socialLinks.twitter}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center space-x-3 text-gray-600 hover:text-[#3F2B96] transition-colors"
+                      >
+                        <Twitter className="h-5 w-5" />
+                        <span className="text-sm">Twitter Profile</span>
+                      </a>
+                    )}
+                    {profileData.instructorProfile?.socialLinks?.website && (
+                      <a 
+                        href={profileData.instructorProfile.socialLinks.website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center space-x-3 text-gray-600 hover:text-[#3F2B96] transition-colors"
+                      >
+                        <Globe className="h-5 w-5" />
+                        <span className="text-sm">Personal Website</span>
+                      </a>
+                    )}
+                  </div>
                 </div>
               </div>
-              
+            </CardContent>
+          </Card>
+
+          {/* Right Column - Main Content */}
+          <div className="lg:col-span-2 space-y-8">
+            {/* Header with Edit Button */}
+            <div className="flex justify-between items-center">
               <div>
-                <h4 className="text-sm font-medium mb-2 text-[#3F2B96]">Social Profiles</h4>
-                <div className="space-y-2">
-                  {profileData.socialLinks.linkedin && (
-                    <a href={profileData.socialLinks.linkedin} target="_blank" rel="noopener noreferrer" className="text-[#3F2B96] hover:underline text-sm flex items-center">
-                      LinkedIn Profile
-                    </a>
-                  )}
-                  {profileData.socialLinks.twitter && (
-                    <a href={profileData.socialLinks.twitter} target="_blank" rel="noopener noreferrer" className="text-[#3F2B96] hover:underline text-sm flex items-center">
-                      Twitter Profile
-                    </a>
-                  )}
-                  {profileData.socialLinks.website && (
-                    <a href={profileData.socialLinks.website} target="_blank" rel="noopener noreferrer" className="text-[#3F2B96] hover:underline text-sm flex items-center">
-                      Personal Website
-                    </a>
-                  )}
-                </div>
+                <h1 className="text-3xl font-bold text-[#3F2B96]">Instructor Profile</h1>
+                <p className="text-gray-600">Manage your professional information and credentials</p>
               </div>
+              <Button 
+                variant="outline"
+                onClick={() => setIsEditing(true)}
+                className="border-[#3F2B96] text-[#3F2B96] hover:bg-[#3F2B96]/5"
+              >
+                <Edit className="h-4 w-4 mr-2" />
+                Edit Profile
+              </Button>
             </div>
-            
-            {/* Middle column - Bio and stats */}
-            <div className="space-y-6 md:col-span-2">
-              <div>
-                <h4 className="text-sm font-medium mb-2 text-[#3F2B96]">Bio</h4>
-                <p className="text-sm text-muted-foreground">{profileData.bio}</p>
-              </div>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <Card className="bg-[#3F2B96]/5 border-[#3F2B96]/20">
-                  <CardContent className="p-4 flex items-center">
-                    <BookOpen className="h-8 w-8 text-[#3F2B96] mr-4" />
-                    <div>
-                      <p className="text-2xl font-semibold">{profileData.totalCourses}</p>
-                      <p className="text-xs text-muted-foreground">Courses Created</p>
+
+            {/* Stats Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <motion.div {...fadeIn} transition={{ delay: 0.1 }}>
+                <Card className="relative overflow-hidden bg-gradient-to-br from-white to-[#3F2B96]/5 border-0 shadow-xl hover:shadow-2xl transition-all duration-300">
+                  <div className="absolute top-0 right-0 w-32 h-32 transform translate-x-16 -translate-y-16">
+                    <div className="absolute inset-0 bg-[#3F2B96] opacity-10 rounded-full"></div>
+                  </div>
+                  <CardContent className="relative p-6">
+                    <div className="flex items-center space-x-4">
+                      <div className="p-3 bg-white rounded-xl shadow-lg">
+                        <BookOpen className="h-8 w-8 text-[#3F2B96]" />
+                      </div>
+                      <div>
+                        <div className="text-4xl font-bold text-[#3F2B96]">{instructorCourses.length}</div>
+                        <div className="text-sm font-medium text-gray-600">Courses Created</div>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
-                
-                <Card className="bg-[#3F2B96]/5 border-[#3F2B96]/20">
-                  <CardContent className="p-4 flex items-center">
-                    <Users className="h-8 w-8 text-[#3F2B96] mr-4" />
-                    <div>
-                      <p className="text-2xl font-semibold">{profileData.totalStudents}</p>
-                      <p className="text-xs text-muted-foreground">Total Students</p>
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                <Card className="bg-[#3F2B96]/5 border-[#3F2B96]/20">
-                  <CardContent className="p-4 flex items-center">
-                    <Clock className="h-8 w-8 text-[#3F2B96] mr-4" />
-                    <div>
-                      <p className="text-2xl font-semibold">{profileData.teachingHours}</p>
-                      <p className="text-xs text-muted-foreground">Teaching Hours</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-              
-              <div>
-                <h4 className="text-sm font-medium mb-3 flex items-center text-[#3F2B96]">
-                  <Star className="h-4 w-4 mr-2 text-[#3F2B96]" />
-                  <span>Instructor Rating: {profileData.averageRating}/5.0</span>
-                </h4>
-                
-                <div className="space-y-3">
-                  {profileData.recentReviews.map((review, index) => (
-                    <Card key={index} className="bg-gray-50">
-                      <CardContent className="p-3">
-                        <div className="flex justify-between items-start mb-1">
-                          <p className="font-medium text-sm">{review.student}</p>
-                          <div className="flex items-center">
-                            <Star className="h-3 w-3 text-yellow-500 fill-yellow-500 mr-1" />
-                            <span className="text-sm">{review.rating}</span>
-                          </div>
+              </motion.div>
+
+              <motion.div {...fadeIn} transition={{ delay: 0.2 }}>
+                <Card className="relative overflow-hidden bg-gradient-to-br from-white to-[#3F2B96]/5 border-0 shadow-xl hover:shadow-2xl transition-all duration-300">
+                  <div className="absolute top-0 right-0 w-32 h-32 transform translate-x-16 -translate-y-16">
+                    <div className="absolute inset-0 bg-[#3F2B96] opacity-10 rounded-full"></div>
+                  </div>
+                  <CardContent className="relative p-6">
+                    <div className="flex items-center space-x-4">
+                      <div className="p-3 bg-white rounded-xl shadow-lg">
+                        <Star className="h-8 w-8 text-[#3F2B96]" />
+                      </div>
+                      <div>
+                        <div className="flex items-baseline">
+                          <span className="text-4xl font-bold text-[#3F2B96]">
+                            {profileData.instructorProfile?.rating || 0}
+                          </span>
+                          <span className="text-sm text-gray-600 ml-1">/ 5</span>
                         </div>
-                        <p className="text-sm text-muted-foreground">{review.comment}</p>
-                        <p className="text-xs text-muted-foreground mt-1">{review.date}</p>
+                        <div className="text-sm font-medium text-gray-600">
+                          {profileData.instructorProfile?.totalReviews || 0} Reviews
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+
+              <motion.div {...fadeIn} transition={{ delay: 0.3 }}>
+                <Card className="relative overflow-hidden bg-gradient-to-br from-white to-[#3F2B96]/5 border-0 shadow-xl hover:shadow-2xl transition-all duration-300">
+                  <div className="absolute top-0 right-0 w-32 h-32 transform translate-x-16 -translate-y-16">
+                    <div className="absolute inset-0 bg-[#3F2B96] opacity-10 rounded-full"></div>
+                  </div>
+                  <CardContent className="relative p-6">
+                    <div className="flex items-center space-x-4">
+                      <div className="p-3 bg-white rounded-xl shadow-lg">
+                        <Clock className="h-8 w-8 text-[#3F2B96]" />
+                      </div>
+                      <div>
+                        <div className="text-4xl font-bold text-[#3F2B96]">
+                          {profileData.instructorProfile?.teachingHours || 0}
+                        </div>
+                        <div className="text-sm font-medium text-gray-600">Teaching Hours</div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </div>
+
+            {/* About Section */}
+            <Card className="shadow-xl hover:shadow-2xl transition-all duration-300 bg-white/80 backdrop-blur-sm border-0">
+              <CardContent className="p-8 space-y-8">
+                {/* About Me Section */}
+                <div className="space-y-4">
+                  <h3 className="text-2xl font-semibold text-[#3F2B96] flex items-center">
+                    <GraduationCap className="h-6 w-6 mr-3" />
+                    About Me
+                  </h3>
+                  <div className="relative">
+                    <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-[#3F2B96] to-transparent rounded-full"></div>
+                    <p className="text-gray-600 leading-relaxed pl-6">
+                      {profileData.bio || profileData.instructorProfile?.bio || 'No bio added yet.'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Skills & Expertise Section */}
+                <div className="space-y-6">
+                  <h3 className="text-2xl font-semibold text-[#3F2B96] flex items-center">
+                    <Award className="h-6 w-6 mr-3" />
+                    Skills & Expertise
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Specialty Card */}
+                    <Card className="bg-gradient-to-br from-white to-[#3F2B96]/5 border-0 shadow-lg">
+                      <CardContent className="p-6">
+                        <h4 className="text-lg font-semibold text-[#3F2B96] mb-3">Specialty</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {profileData.instructorProfile?.specialty ? (
+                            <Badge className="px-4 py-2 bg-[#3F2B96] text-white hover:bg-[#3F2B96]/90 transition-colors">
+                              {profileData.instructorProfile.specialty}
+                            </Badge>
+                          ) : (
+                            <span className="text-gray-500 italic">No specialty added</span>
+                          )}
+                        </div>
                       </CardContent>
                     </Card>
-                  ))}
+
+                    {/* Experience Level */}
+                    <Card className="bg-gradient-to-br from-white to-[#3F2B96]/5 border-0 shadow-lg">
+                      <CardContent className="p-6">
+                        <h4 className="text-lg font-semibold text-[#3F2B96] mb-3">Experience Level</h4>
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center">
+                            <span className="text-gray-600">Years of Experience</span>
+                            <span className="font-semibold text-[#3F2B96]">
+                              {profileData.instructorProfile?.experience || 0} Years
+                            </span>
+                          </div>
+                          <Progress 
+                            value={Math.min((profileData.instructorProfile?.experience || 0) * 10, 100)} 
+                            className="h-2 bg-[#3F2B96]/10"
+                          />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
                 </div>
+              </CardContent>
+            </Card>
+          </div>
+        </motion.div>
+
+        <Dialog open={isEditing} onOpenChange={setIsEditing}>
+          <DialogContent className="sm:max-w-[1000px] max-h-[85vh] p-0 bg-white flex flex-col">
+            {/* Fixed Header */}
+            <div className="p-6 border-b">
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2 text-[#3F2B96]">
+                  <Edit className="h-5 w-5" />
+                  <h2 className="text-xl font-semibold">Edit Profile</h2>
+                </div>
+                <p className="text-gray-500">Update your professional information and credentials</p>
               </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
-      
-      {/* Edit Profile Dialog */}
-      <Dialog open={isEditing} onOpenChange={setIsEditing}>
-        <DialogContent className="sm:max-w-[625px]">
-          <DialogHeader>
-            <DialogTitle className="text-[#3F2B96]">Edit Profile</DialogTitle>
-          </DialogHeader>
-          
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Full Name</FormLabel>
-                      <FormControl>
-                        <Input {...field} className="focus-visible:ring-[#3F2B96]" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="role"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Role / Title</FormLabel>
-                      <FormControl>
-                        <Input {...field} className="focus-visible:ring-[#3F2B96]" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input {...field} type="email" className="focus-visible:ring-[#3F2B96]" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="phone"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Phone</FormLabel>
-                      <FormControl>
-                        <Input {...field} className="focus-visible:ring-[#3F2B96]" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="location"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Location</FormLabel>
-                      <FormControl>
-                        <Input {...field} className="focus-visible:ring-[#3F2B96]" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="specialty"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Specialty</FormLabel>
-                      <FormControl>
-                        <Input {...field} className="focus-visible:ring-[#3F2B96]" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="experience"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Years of Experience</FormLabel>
-                      <FormControl>
-                        <Input {...field} type="number" min="0" className="focus-visible:ring-[#3F2B96]" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              
-              <FormField
-                control={form.control}
-                name="bio"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Bio</FormLabel>
-                    <FormControl>
-                      <Textarea 
-                        {...field} 
-                        className="min-h-[120px] focus-visible:ring-[#3F2B96]" 
-                        placeholder="Tell students about yourself, your experience, and teaching style"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <div className="space-y-4">
-                <h4 className="text-sm font-medium text-[#3F2B96]">Social Media Links</h4>
-                
-                <div className="grid grid-cols-1 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="linkedin"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>LinkedIn URL</FormLabel>
-                        <FormControl>
-                          <Input {...field} placeholder="https://linkedin.com/in/username" className="focus-visible:ring-[#3F2B96]" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="twitter"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Twitter URL</FormLabel>
-                        <FormControl>
-                          <Input {...field} placeholder="https://twitter.com/username" className="focus-visible:ring-[#3F2B96]" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="website"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Personal Website</FormLabel>
-                        <FormControl>
-                          <Input {...field} placeholder="https://yourwebsite.com" className="focus-visible:ring-[#3F2B96]" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </div>
-              
-              <DialogFooter>
+
+            {/* Scrollable Content */}
+            <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
+                    {/* Left Column */}
+                    <div className="space-y-8">
+                      {/* Personal Information */}
+                      <div className="space-y-6">
+                        <div className="flex items-center space-x-2 text-[#3F2B96]">
+                          <User className="h-5 w-5" />
+                          <h3 className="text-lg font-semibold">Personal Information</h3>
+                        </div>
+                        
+                        <div className="space-y-4">
+                          <FormField
+                            control={form.control}
+                            name="name"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-gray-700">Full Name</FormLabel>
+                                <FormControl>
+                                  <Input 
+                                    {...field} 
+                                    className="border-gray-200 focus-visible:ring-[#3F2B96] h-10" 
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={form.control}
+                            name="email"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-gray-700">Email Address</FormLabel>
+                                <FormControl>
+                                  <Input 
+                                    {...field} 
+                                    type="email" 
+                                    className="border-gray-200 focus-visible:ring-[#3F2B96] h-10" 
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Contact Information */}
+                      <div className="space-y-6">
+                        <div className="flex items-center space-x-2 text-[#3F2B96]">
+                          <Phone className="h-5 w-5" />
+                          <h3 className="text-lg font-semibold">Contact Information</h3>
+                        </div>
+                        
+                        <div className="space-y-4">
+                          <FormField
+                            control={form.control}
+                            name="phone"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-gray-700">Phone Number</FormLabel>
+                                <FormControl>
+                                  <Input 
+                                    {...field} 
+                                    className="border-gray-200 focus-visible:ring-[#3F2B96] h-10" 
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={form.control}
+                            name="location"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-gray-700">Location</FormLabel>
+                                <FormControl>
+                                  <Input 
+                                    {...field} 
+                                    className="border-gray-200 focus-visible:ring-[#3F2B96] h-10" 
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Professional Details */}
+                      <div className="space-y-6">
+                        <div className="flex items-center space-x-2 text-[#3F2B96]">
+                          <Briefcase className="h-5 w-5" />
+                          <h3 className="text-lg font-semibold">Professional Details</h3>
+                        </div>
+                        
+                        <div className="space-y-4">
+                          <FormField
+                            control={form.control}
+                            name="specialty"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-gray-700">Specialty</FormLabel>
+                                <FormControl>
+                                  <Input 
+                                    {...field} 
+                                    className="border-gray-200 focus-visible:ring-[#3F2B96] h-10" 
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={form.control}
+                            name="experience"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-gray-700">Years of Experience</FormLabel>
+                                <FormControl>
+                                  <Input 
+                                    {...field} 
+                                    type="number" 
+                                    min="0" 
+                                    className="border-gray-200 focus-visible:ring-[#3F2B96] h-10" 
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Right Column */}
+                    <div className="space-y-8">
+                      {/* Biography */}
+                      <div className="space-y-6">
+                        <div className="flex items-center space-x-2 text-[#3F2B96]">
+                          <FileText className="h-5 w-5" />
+                          <h3 className="text-lg font-semibold">Biography</h3>
+                        </div>
+                        
+                        <FormField
+                          control={form.control}
+                          name="bio"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-gray-700">Professional Bio</FormLabel>
+                              <FormControl>
+                                <Textarea 
+                                  {...field} 
+                                  className="border-gray-200 focus-visible:ring-[#3F2B96] min-h-[150px] resize-none" 
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      {/* Social Links */}
+                      <div className="space-y-6">
+                        <div className="flex items-center space-x-2 text-[#3F2B96]">
+                          <Globe className="h-5 w-5" />
+                          <h3 className="text-lg font-semibold">Social Links</h3>
+                        </div>
+                        
+                        <div className="space-y-4">
+                          <FormField
+                            control={form.control}
+                            name="linkedin"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-gray-700 flex items-center space-x-2">
+                                  <Linkedin className="h-4 w-4" />
+                                  <span>LinkedIn URL</span>
+                                </FormLabel>
+                                <FormControl>
+                                  <Input 
+                                    {...field} 
+                                    className="border-gray-200 focus-visible:ring-[#3F2B96] h-10" 
+                                    placeholder="https://linkedin.com/in/username"
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={form.control}
+                            name="twitter"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-gray-700 flex items-center space-x-2">
+                                  <Twitter className="h-4 w-4" />
+                                  <span>Twitter URL</span>
+                                </FormLabel>
+                                <FormControl>
+                                  <Input 
+                                    {...field} 
+                                    className="border-gray-200 focus-visible:ring-[#3F2B96] h-10" 
+                                    placeholder="https://twitter.com/username"
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={form.control}
+                            name="website"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-gray-700 flex items-center space-x-2">
+                                  <Globe className="h-4 w-4" />
+                                  <span>Personal Website</span>
+                                </FormLabel>
+                                <FormControl>
+                                  <Input 
+                                    {...field} 
+                                    className="border-gray-200 focus-visible:ring-[#3F2B96] h-10" 
+                                    placeholder="https://yourwebsite.com"
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </form>
+              </Form>
+            </div>
+
+            {/* Fixed Footer */}
+            <div className="p-6 border-t bg-white">
+              <div className="flex justify-end space-x-2">
                 <Button 
-                  type="button" 
+                  type="button"
                   variant="outline" 
                   onClick={() => setIsEditing(false)}
-                  className="border-[#3F2B96] text-[#3F2B96] hover:bg-[#3F2B96]/5"
+                  className="border-gray-200"
                 >
                   Cancel
                 </Button>
                 <Button 
-                  type="submit" 
+                  onClick={form.handleSubmit(onSubmit)}
                   disabled={isLoading}
-                  className="bg-[#3F2B96] hover:bg-[#5b44ad] text-white"
+                  className="bg-[#3F2B96] hover:bg-[#3F2B96]/90 text-white px-6"
                 >
-                  {isLoading ? "Saving..." : "Save Changes"}
+                  {isLoading ? (
+                    <div className="flex items-center space-x-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                      <span>Saving...</span>
+                    </div>
+                  ) : (
+                    'Save Changes'
+                  )}
                 </Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
-    </>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+    </div>
   );
 };
 
