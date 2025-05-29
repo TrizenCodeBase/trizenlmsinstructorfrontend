@@ -10,6 +10,7 @@ export interface ProfileData {
   bio: string;
   timezone: string;
   isActive: boolean;
+  referralCount: number;
   notificationPreferences: {
     courseUpdates: boolean;
     assignmentReminders: boolean;

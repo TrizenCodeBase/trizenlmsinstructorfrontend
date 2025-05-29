@@ -24,7 +24,16 @@ import {
   Briefcase,
   GraduationCap,
   User,
-  FileText
+  FileText,
+  Calendar,
+  AlertCircle,
+  CheckCircle,
+  Loader2,
+  Plus,
+  Copy,
+  Link as LinkIcon,
+  Share2,
+  ChevronDown
 } from 'lucide-react';
 import {
   Dialog,
@@ -48,6 +57,13 @@ import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { fetchProfile, updateProfile, uploadProfilePicture, ProfileData } from '@/services/profileService';
 import { useInstructorCourses } from '@/services/courseService';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 // Form schema
 const profileFormSchema = z.object({
@@ -79,6 +95,7 @@ const InstructorProfile: React.FC = () => {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [selectedCourse, setSelectedCourse] = useState<string>('all');
   
   // Fetch instructor courses
   const { data: instructorCourses = [] } = useInstructorCourses();
@@ -156,10 +173,10 @@ const InstructorProfile: React.FC = () => {
           experience: Number(values.experience) || 0,
           phone: values.phone || '',
           location: values.location || '',
-          socialLinks: {
-            linkedin: values.linkedin || '',
-            twitter: values.twitter || '',
-            website: values.website || '',
+        socialLinks: {
+          linkedin: values.linkedin || '',
+          twitter: values.twitter || '',
+          website: values.website || '',
           },
           rating: profileData.instructorProfile?.rating || 0,
           totalReviews: profileData.instructorProfile?.totalReviews || 0,
@@ -242,6 +259,20 @@ const InstructorProfile: React.FC = () => {
     transition: { duration: 0.5 }
   };
 
+  // Function to get referral link
+  const getReferralLink = (courseId?: string) => {
+    const baseUrl = 'https://lms.trizenventures.com/enroll';
+    const userUrl = profileData?.userId || '';
+    
+    if (courseId && courseId !== 'all') {
+      const course = instructorCourses.find(c => c._id === courseId);
+      if (course) {
+        return `${baseUrl}?ref=${userUrl}&course=${course.courseUrl}`;
+      }
+    }
+    return `${baseUrl}?ref=${userUrl}`;
+  };
+
   if (isLoading || !profileData) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -289,12 +320,12 @@ const InstructorProfile: React.FC = () => {
                         alt={profileData.name}
                         className="object-cover"
                       />
-                    ) : (
+                  ) : (
                       <AvatarFallback className="bg-[#3F2B96] text-4xl text-white">
                         {getInitials(profileData?.name || '')}
-                      </AvatarFallback>
-                    )}
-                  </Avatar>
+                    </AvatarFallback>
+                  )}
+                </Avatar>
                   <input
                     type="file"
                     ref={fileInputRef}
@@ -316,7 +347,7 @@ const InstructorProfile: React.FC = () => {
                     )}
                   </Button>
                 </div>
-
+                
                 {/* Name and Role */}
                 <div className="text-center space-y-2">
                   <h2 className="text-2xl font-bold text-[#3F2B96]">{profileData.name}</h2>
@@ -331,13 +362,13 @@ const InstructorProfile: React.FC = () => {
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600">Profile Completion</span>
                     <span className="text-[#3F2B96] font-semibold">{calculateProfileCompletion()}%</span>
-                  </div>
+              </div>
                   <Progress 
                     value={calculateProfileCompletion()} 
                     className="h-2 bg-gray-100" 
                   />
                 </div>
-
+                
                 {/* Contact Information */}
                 <div className="w-full space-y-4">
                   <h3 className="font-semibold text-[#3F2B96] border-b pb-2">Contact Information</h3>
@@ -349,14 +380,14 @@ const InstructorProfile: React.FC = () => {
                     <div className="flex items-center space-x-3 text-gray-600">
                       <Phone className="h-5 w-5 text-[#3F2B96]" />
                       <span className="text-sm">{profileData.instructorProfile?.phone || 'No phone number added'}</span>
-                    </div>
+                  </div>
                     <div className="flex items-center space-x-3 text-gray-600">
                       <MapPin className="h-5 w-5 text-[#3F2B96]" />
                       <span className="text-sm">{profileData.instructorProfile?.location || 'No location added'}</span>
-                    </div>
                   </div>
                 </div>
-
+              </div>
+              
                 {/* Social Links */}
                 <div className="w-full space-y-4">
                   <h3 className="font-semibold text-[#3F2B96] border-b pb-2">Social Profiles</h3>
@@ -370,8 +401,8 @@ const InstructorProfile: React.FC = () => {
                       >
                         <Linkedin className="h-5 w-5" />
                         <span className="text-sm">LinkedIn Profile</span>
-                      </a>
-                    )}
+                    </a>
+                  )}
                     {profileData.instructorProfile?.socialLinks?.twitter && (
                       <a 
                         href={profileData.instructorProfile.socialLinks.twitter}
@@ -381,8 +412,8 @@ const InstructorProfile: React.FC = () => {
                       >
                         <Twitter className="h-5 w-5" />
                         <span className="text-sm">Twitter Profile</span>
-                      </a>
-                    )}
+                    </a>
+                  )}
                     {profileData.instructorProfile?.socialLinks?.website && (
                       <a 
                         href={profileData.instructorProfile.socialLinks.website}
@@ -392,14 +423,14 @@ const InstructorProfile: React.FC = () => {
                       >
                         <Globe className="h-5 w-5" />
                         <span className="text-sm">Personal Website</span>
-                      </a>
-                    )}
-                  </div>
+                    </a>
+                  )}
                 </div>
               </div>
+            </div>
             </CardContent>
           </Card>
-
+            
           {/* Right Column - Main Content */}
           <div className="lg:col-span-2 space-y-8">
             {/* Header with Edit Button */}
@@ -416,8 +447,8 @@ const InstructorProfile: React.FC = () => {
                 <Edit className="h-4 w-4 mr-2" />
                 Edit Profile
               </Button>
-            </div>
-
+              </div>
+              
             {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <motion.div {...fadeIn} transition={{ delay: 0.1 }}>
@@ -430,7 +461,7 @@ const InstructorProfile: React.FC = () => {
                       <div className="p-3 bg-white rounded-xl shadow-lg">
                         <BookOpen className="h-8 w-8 text-[#3F2B96]" />
                       </div>
-                      <div>
+                    <div>
                         <div className="text-4xl font-bold text-[#3F2B96]">{instructorCourses.length}</div>
                         <div className="text-sm font-medium text-gray-600">Courses Created</div>
                       </div>
@@ -449,7 +480,7 @@ const InstructorProfile: React.FC = () => {
                       <div className="p-3 bg-white rounded-xl shadow-lg">
                         <Star className="h-8 w-8 text-[#3F2B96]" />
                       </div>
-                      <div>
+                    <div>
                         <div className="flex items-baseline">
                           <span className="text-4xl font-bold text-[#3F2B96]">
                             {profileData.instructorProfile?.rating || 0}
@@ -473,13 +504,13 @@ const InstructorProfile: React.FC = () => {
                   <CardContent className="relative p-6">
                     <div className="flex items-center space-x-4">
                       <div className="p-3 bg-white rounded-xl shadow-lg">
-                        <Clock className="h-8 w-8 text-[#3F2B96]" />
+                        <Users className="h-8 w-8 text-[#3F2B96]" />
                       </div>
-                      <div>
+                    <div>
                         <div className="text-4xl font-bold text-[#3F2B96]">
-                          {profileData.instructorProfile?.teachingHours || 0}
+                          {profileData?.referralCount || 0}
                         </div>
-                        <div className="text-sm font-medium text-gray-600">Teaching Hours</div>
+                        <div className="text-sm font-medium text-gray-600">Total Referrals</div>
                       </div>
                     </div>
                   </CardContent>
@@ -504,6 +535,106 @@ const InstructorProfile: React.FC = () => {
                   </div>
                 </div>
 
+                {/* Course Referral Links Section */}
+                <div className="space-y-6">
+                  <h3 className="text-2xl font-semibold text-[#3F2B96] flex items-center gap-2">
+                    <Share2 className="h-6 w-6" />
+                    Course Referral Program
+                  </h3>
+                  <p className="text-gray-600">Share your favorite courses with friends and earn rewards</p>
+
+                  <div className="bg-white rounded-lg border p-6 space-y-6">
+                    {/* Step 1: Select Course */}
+                    <div className="space-y-3">
+                      <h4 className="font-medium text-gray-700">Step 1: Select Course to Share</h4>
+                      <Select
+                        value={selectedCourse}
+                        onValueChange={setSelectedCourse}
+                      >
+                        <SelectTrigger className="w-full bg-white">
+                          <SelectValue placeholder="Select a course" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Courses</SelectItem>
+                          {instructorCourses.map((course) => (
+                            <SelectItem key={course._id} value={course._id}>
+                              {course.title}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Step 2: Copy Link */}
+                    <div className="space-y-3">
+                      <h4 className="font-medium text-gray-700">Step 2: Copy Your Unique Referral Link</h4>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 flex items-center gap-2">
+                          <Input 
+                            readOnly
+                            value={getReferralLink(selectedCourse)}
+                            className="bg-gray-50 font-mono text-sm"
+                          />
+                          <span className="text-xs text-[#3F2B96]">Your Link</span>
+                        </div>
+                        <Button
+                          onClick={() => {
+                            navigator.clipboard.writeText(getReferralLink(selectedCourse));
+                            toast({
+                              title: "Success",
+                              description: "Referral link copied to clipboard!",
+                            });
+                          }}
+                          variant="outline"
+                          size="icon"
+                          className="shrink-0"
+                        >
+                          <Copy className="h-4 w-4" />
+                        </Button>
+                      </div>
+              </div>
+              
+                    {/* How it Works */}
+                    <div className="space-y-3">
+                      <h4 className="font-medium text-[#3F2B96] flex items-center gap-2">
+                        <span className="w-5 h-5 rounded-full bg-[#3F2B96]/10 flex items-center justify-center">
+                          <span className="text-[#3F2B96] text-sm">?</span>
+                        </span>
+                        How the Referral Program Works
+                      </h4>
+                      <div className="space-y-4">
+                        <div className="flex gap-3">
+                          <div className="w-6 h-6 rounded-full bg-[#3F2B96]/10 flex items-center justify-center shrink-0">
+                            <span className="text-[#3F2B96] text-sm">1</span>
+                          </div>
+                          <div>
+                            <h5 className="font-medium text-gray-700">Select & Share</h5>
+                            <p className="text-sm text-gray-500">Choose a course and share your unique referral link with friends</p>
+                          </div>
+                        </div>
+                        <div className="flex gap-3">
+                          <div className="w-6 h-6 rounded-full bg-[#3F2B96]/10 flex items-center justify-center shrink-0">
+                            <span className="text-[#3F2B96] text-sm">2</span>
+                          </div>
+                          <div>
+                            <h5 className="font-medium text-gray-700">Friend Enrolls</h5>
+                            <p className="text-sm text-gray-500">When your friend uses your link to enroll in the course</p>
+                          </div>
+                        </div>
+                        <div className="flex gap-3">
+                          <div className="w-6 h-6 rounded-full bg-[#3F2B96]/10 flex items-center justify-center shrink-0">
+                            <span className="text-[#3F2B96] text-sm">3</span>
+                          </div>
+                          <div>
+                            <h5 className="font-medium text-gray-700">Earn Rewards</h5>
+                            <p className="text-sm text-gray-500">Get exclusive rewards for successful referrals</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
                 {/* Skills & Expertise Section */}
                 <div className="space-y-6">
                   <h3 className="text-2xl font-semibold text-[#3F2B96] flex items-center">
@@ -577,44 +708,44 @@ const InstructorProfile: React.FC = () => {
                         <div className="flex items-center space-x-2 text-[#3F2B96]">
                           <User className="h-5 w-5" />
                           <h3 className="text-lg font-semibold">Personal Information</h3>
-                        </div>
+          </div>
                         
                         <div className="space-y-4">
-                          <FormField
-                            control={form.control}
-                            name="name"
-                            render={({ field }) => (
-                              <FormItem>
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
                                 <FormLabel className="text-gray-700">Full Name</FormLabel>
-                                <FormControl>
+                      <FormControl>
                                   <Input 
                                     {...field} 
                                     className="border-gray-200 focus-visible:ring-[#3F2B96] h-10" 
                                   />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-
-                          <FormField
-                            control={form.control}
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
                             name="email"
-                            render={({ field }) => (
-                              <FormItem>
+                  render={({ field }) => (
+                    <FormItem>
                                 <FormLabel className="text-gray-700">Email Address</FormLabel>
-                                <FormControl>
+                      <FormControl>
                                   <Input 
                                     {...field} 
                                     type="email" 
                                     className="border-gray-200 focus-visible:ring-[#3F2B96] h-10" 
                                   />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
                       </div>
 
                       {/* Contact Information */}
@@ -622,43 +753,43 @@ const InstructorProfile: React.FC = () => {
                         <div className="flex items-center space-x-2 text-[#3F2B96]">
                           <Phone className="h-5 w-5" />
                           <h3 className="text-lg font-semibold">Contact Information</h3>
-                        </div>
-                        
+              </div>
+              
                         <div className="space-y-4">
-                          <FormField
-                            control={form.control}
+                <FormField
+                  control={form.control}
                             name="phone"
-                            render={({ field }) => (
-                              <FormItem>
+                  render={({ field }) => (
+                    <FormItem>
                                 <FormLabel className="text-gray-700">Phone Number</FormLabel>
-                                <FormControl>
+                      <FormControl>
                                   <Input 
                                     {...field} 
                                     className="border-gray-200 focus-visible:ring-[#3F2B96] h-10" 
                                   />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-
-                          <FormField
-                            control={form.control}
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
                             name="location"
-                            render={({ field }) => (
-                              <FormItem>
+                  render={({ field }) => (
+                    <FormItem>
                                 <FormLabel className="text-gray-700">Location</FormLabel>
-                                <FormControl>
+                      <FormControl>
                                   <Input 
                                     {...field} 
                                     className="border-gray-200 focus-visible:ring-[#3F2B96] h-10" 
                                   />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
                       </div>
 
                       {/* Professional Details */}
@@ -666,45 +797,45 @@ const InstructorProfile: React.FC = () => {
                         <div className="flex items-center space-x-2 text-[#3F2B96]">
                           <Briefcase className="h-5 w-5" />
                           <h3 className="text-lg font-semibold">Professional Details</h3>
-                        </div>
-                        
+              </div>
+              
                         <div className="space-y-4">
-                          <FormField
-                            control={form.control}
+                <FormField
+                  control={form.control}
                             name="specialty"
-                            render={({ field }) => (
-                              <FormItem>
+                  render={({ field }) => (
+                    <FormItem>
                                 <FormLabel className="text-gray-700">Specialty</FormLabel>
-                                <FormControl>
+                      <FormControl>
                                   <Input 
                                     {...field} 
                                     className="border-gray-200 focus-visible:ring-[#3F2B96] h-10" 
                                   />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-
-                          <FormField
-                            control={form.control}
-                            name="experience"
-                            render={({ field }) => (
-                              <FormItem>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="experience"
+                  render={({ field }) => (
+                    <FormItem>
                                 <FormLabel className="text-gray-700">Years of Experience</FormLabel>
-                                <FormControl>
+                      <FormControl>
                                   <Input 
                                     {...field} 
                                     type="number" 
                                     min="0" 
                                     className="border-gray-200 focus-visible:ring-[#3F2B96] h-10" 
                                   />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
                       </div>
                     </div>
 
@@ -715,24 +846,24 @@ const InstructorProfile: React.FC = () => {
                         <div className="flex items-center space-x-2 text-[#3F2B96]">
                           <FileText className="h-5 w-5" />
                           <h3 className="text-lg font-semibold">Biography</h3>
-                        </div>
-                        
-                        <FormField
-                          control={form.control}
-                          name="bio"
-                          render={({ field }) => (
-                            <FormItem>
+              </div>
+              
+              <FormField
+                control={form.control}
+                name="bio"
+                render={({ field }) => (
+                  <FormItem>
                               <FormLabel className="text-gray-700">Professional Bio</FormLabel>
-                              <FormControl>
-                                <Textarea 
-                                  {...field} 
+                    <FormControl>
+                      <Textarea 
+                        {...field} 
                                   className="border-gray-200 focus-visible:ring-[#3F2B96] min-h-[150px] resize-none" 
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
                       </div>
 
                       {/* Social Links */}
@@ -741,83 +872,83 @@ const InstructorProfile: React.FC = () => {
                           <Globe className="h-5 w-5" />
                           <h3 className="text-lg font-semibold">Social Links</h3>
                         </div>
-                        
-                        <div className="space-y-4">
-                          <FormField
-                            control={form.control}
-                            name="linkedin"
-                            render={({ field }) => (
-                              <FormItem>
+              
+              <div className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="linkedin"
+                    render={({ field }) => (
+                      <FormItem>
                                 <FormLabel className="text-gray-700 flex items-center space-x-2">
                                   <Linkedin className="h-4 w-4" />
                                   <span>LinkedIn URL</span>
                                 </FormLabel>
-                                <FormControl>
+                        <FormControl>
                                   <Input 
                                     {...field} 
                                     className="border-gray-200 focus-visible:ring-[#3F2B96] h-10" 
                                     placeholder="https://linkedin.com/in/username"
                                   />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-
-                          <FormField
-                            control={form.control}
-                            name="twitter"
-                            render={({ field }) => (
-                              <FormItem>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="twitter"
+                    render={({ field }) => (
+                      <FormItem>
                                 <FormLabel className="text-gray-700 flex items-center space-x-2">
                                   <Twitter className="h-4 w-4" />
                                   <span>Twitter URL</span>
                                 </FormLabel>
-                                <FormControl>
+                        <FormControl>
                                   <Input 
                                     {...field} 
                                     className="border-gray-200 focus-visible:ring-[#3F2B96] h-10" 
                                     placeholder="https://twitter.com/username"
                                   />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-
-                          <FormField
-                            control={form.control}
-                            name="website"
-                            render={({ field }) => (
-                              <FormItem>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="website"
+                    render={({ field }) => (
+                      <FormItem>
                                 <FormLabel className="text-gray-700 flex items-center space-x-2">
                                   <Globe className="h-4 w-4" />
                                   <span>Personal Website</span>
                                 </FormLabel>
-                                <FormControl>
+                        <FormControl>
                                   <Input 
                                     {...field} 
                                     className="border-gray-200 focus-visible:ring-[#3F2B96] h-10" 
                                     placeholder="https://yourwebsite.com"
                                   />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
                       </div>
                     </div>
                   </div>
                 </form>
               </Form>
-            </div>
-
+              </div>
+              
             {/* Fixed Footer */}
             <div className="p-6 border-t bg-white">
               <div className="flex justify-end space-x-2">
                 <Button 
-                  type="button"
+                  type="button" 
                   variant="outline" 
                   onClick={() => setIsEditing(false)}
                   className="border-gray-200"
@@ -840,8 +971,8 @@ const InstructorProfile: React.FC = () => {
                 </Button>
               </div>
             </div>
-          </DialogContent>
-        </Dialog>
+        </DialogContent>
+      </Dialog>
       </div>
     </div>
   );
