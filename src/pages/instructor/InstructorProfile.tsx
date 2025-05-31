@@ -625,7 +625,7 @@ const InstructorProfile: React.FC = () => {
                           <div className="w-6 h-6 rounded-full bg-[#3F2B96]/10 flex items-center justify-center shrink-0">
                             <span className="text-[#3F2B96] text-sm">3</span>
                           </div>
-                          <div>
+              <div>
                             <h5 className="font-medium text-gray-700">Earn Rewards</h5>
                             <p className="text-sm text-gray-500">Get exclusive rewards for successful referrals</p>
                           </div>

@@ -77,7 +77,8 @@ export const useInstructorCourses = () => {
         const response = await axios.get('/api/instructor/courses');
         return response.data;
       } catch (error) {
-        return mockCourses;
+        console.error('Error fetching instructor courses:', error);
+        throw error;
       }
     }
   });
@@ -335,4 +336,76 @@ export const checkTitleAvailability = async (title: string): Promise<boolean> =>
     console.error('Failed to check title availability:', error);
     return false;
   }
+};
+
+export interface EnrolledUser {
+  _id: string;
+  userId: {
+    _id: string;
+    name: string;
+    email: string;
+    avatar?: string;
+  };
+  progress: number;
+  status: 'pending' | 'enrolled' | 'started' | 'completed';
+  enrolledAt: string;
+  lastAccessedAt: string;
+  completedDays: number[];
+}
+
+export interface CourseEnrollments {
+  courseId: string;
+  enrolledUsers: EnrolledUser[];
+}
+
+export const useEnrolledUsers = (courseId?: string) => {
+  return useQuery({
+    queryKey: ['enrolled-users', courseId],
+    queryFn: async () => {
+      if (!courseId || courseId === 'all') return null;
+      try {
+        const response = await axios.get(`/api/courses/${courseId}/enrolled-users`);
+        return response.data as CourseEnrollments;
+      } catch (error) {
+        console.error('Error fetching enrolled users:', error);
+        throw error;
+      }
+    },
+    enabled: !!courseId && courseId !== 'all'
+  });
+};
+
+export const useAllEnrolledUsers = (courseIds: string[]) => {
+  return useQuery({
+    queryKey: ['all-enrolled-users', courseIds],
+    queryFn: async () => {
+      if (!courseIds.length) return [];
+      try {
+        // Fetch enrolled users for all courses in parallel
+        const responses = await Promise.all(
+          courseIds.map(async (courseId) => {
+            const response = await axios.get(`/api/courses/${courseId}/enrolled-users`);
+            const data = response.data as CourseEnrollments;
+            // Add courseTitle from the course data
+            return {
+              ...data,
+              enrolledUsers: data.enrolledUsers.map(user => ({
+                ...user,
+                courseId: data.courseId
+              }))
+            };
+          })
+        );
+        
+        // Combine all enrolled users into a single array
+        return responses.reduce((acc, curr) => {
+          return [...acc, ...curr.enrolledUsers];
+        }, [] as (EnrolledUser & { courseId: string })[]);
+      } catch (error) {
+        console.error('Error fetching all enrolled users:', error);
+        throw error;
+      }
+    },
+    enabled: courseIds.length > 0
+  });
 };

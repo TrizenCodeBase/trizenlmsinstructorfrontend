@@ -12,7 +12,7 @@ const instance = axios.create({
   }
 });
 
-// Add request interceptor to include auth token (if available)
+// Add request interceptor to include aut.h token (if available)
 instance.interceptors.request.use((config) => {
   const token = localStorage.getItem('auth_token');
   if (token) {

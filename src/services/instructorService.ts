@@ -1,5 +1,5 @@
-
 import { useQuery } from '@tanstack/react-query';
+import axios from '@/lib/axios';
 
 interface Activity {
   type: 'enrollment' | 'review' | 'completion';
@@ -25,6 +25,24 @@ export interface DashboardOverview {
   teachingHoursChange: number;
   recentActivity: Activity[];
   courseStatus: CourseStatus[];
+}
+
+export interface InstructorStats {
+  totalStudents: number;
+  newStudentsThisMonth: number;
+}
+
+export interface InstructorRatings {
+  averageRating: number;
+  ratingChange: number;
+  totalCourses: number;
+  ratedCourses: number;
+}
+
+export interface InstructorReferrals {
+  totalReferrals: number;
+  newReferralsThisMonth: number;
+  referralCode: string;
 }
 
 // Mock data fetching function
@@ -87,5 +105,35 @@ export const useDashboardOverview = () => {
   return useQuery({
     queryKey: ['dashboardOverview'],
     queryFn: fetchDashboardOverview
+  });
+};
+
+export const useInstructorTotalStudents = () => {
+  return useQuery<InstructorStats>({
+    queryKey: ['instructor-total-students'],
+    queryFn: async () => {
+      const response = await axios.get('/api/instructor/total-students');
+      return response.data;
+    }
+  });
+};
+
+export const useInstructorRatings = () => {
+  return useQuery<InstructorRatings>({
+    queryKey: ['instructor-ratings'],
+    queryFn: async () => {
+      const response = await axios.get('/api/instructor/ratings');
+      return response.data;
+    }
+  });
+};
+
+export const useInstructorReferrals = () => {
+  return useQuery<InstructorReferrals>({
+    queryKey: ['instructor-referrals'],
+    queryFn: async () => {
+      const response = await axios.get('/api/instructor/referrals');
+      return response.data;
+    }
   });
 };

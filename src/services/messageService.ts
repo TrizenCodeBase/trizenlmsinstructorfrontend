@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { useQuery } from '@tanstack/react-query';
@@ -41,7 +40,56 @@ export const useMessageStore = create<MessageStore>()(
   )
 );
 
-// Mock data for conversations and messages
+// API hooks
+export const useMessages = (receiverId: string, courseId: string) => {
+  return useQuery({
+    queryKey: ['messages', receiverId, courseId],
+    queryFn: async () => {
+      if (!receiverId || !courseId) return [];
+      const { data } = await axios.get(`/api/messages/${receiverId}/${courseId}`);
+      return data;
+    },
+    enabled: !!receiverId && !!courseId,
+    refetchInterval: 5000 // Poll for new messages every 5 seconds
+  });
+};
+
+export const useUnreadCount = () => {
+  return useQuery({
+    queryKey: ['unread-messages'],
+    queryFn: async () => {
+      const { data } = await axios.get('/api/messages/unread/count');
+      return data.count;
+    },
+    refetchInterval: 10000 // Poll for unread count every 10 seconds
+  });
+};
+
+export const useConversations = () => {
+  return useQuery({
+    queryKey: ['conversations'],
+    queryFn: async () => {
+      // In a real app, this would be an API call
+      // return await axios.get('/api/messages/conversations');
+      return mockConversations;
+    }
+  });
+};
+
+export const useEnrolledStudents = (courseId?: string) => {
+  return useQuery({
+    queryKey: ['enrolled-students', courseId],
+    queryFn: async () => {
+      if (!courseId) return [];  // no course selected
+      const { data } = await axios.get(`/api/courses/${courseId}/enrolled-users`);
+      // data.enrolledUsers is an array of { userId: { _id, name, email, avatar }, ... }
+      return data.enrolledUsers;
+    },
+    enabled: !!courseId
+  });
+};
+
+// Mock data for conversations and messages for now
 const mockConversations = [
   {
     partner: { _id: '1', name: 'John Doe' },
@@ -79,44 +127,3 @@ const mockMessages = [
     read: true
   }
 ];
-
-const mockStudents = [
-  { _id: '1', name: 'John Doe', email: 'john@example.com', course: { _id: '101', title: 'Web Development Basics' } },
-  { _id: '2', name: 'Jane Smith', email: 'jane@example.com', course: { _id: '102', title: 'Advanced JavaScript' } }
-];
-
-// API hooks
-export const useConversations = () => {
-  return useQuery({
-    queryKey: ['conversations'],
-    queryFn: async () => {
-      // In a real app, this would be an API call
-      // return await axios.get('/api/messages/conversations');
-      return mockConversations;
-    }
-  });
-};
-
-export const useMessages = (conversationId: string, courseId: string) => {
-  return useQuery({
-    queryKey: ['messages', conversationId, courseId],
-    queryFn: async () => {
-      if (!conversationId || !courseId) return [];
-      // In a real app, this would be an API call
-      // return await axios.get(`/api/messages/${conversationId}?courseId=${courseId}`);
-      return mockMessages;
-    },
-    enabled: !!conversationId && !!courseId
-  });
-};
-
-export const useEnrolledStudents = () => {
-  return useQuery({
-    queryKey: ['enrolled-students'],
-    queryFn: async () => {
-      // In a real app, this would be an API call
-      // return await axios.get('/api/students/enrolled');
-      return mockStudents;
-    }
-  });
-};

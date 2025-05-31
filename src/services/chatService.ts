@@ -1,4 +1,3 @@
-
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from '@/lib/axios';
 
@@ -8,29 +7,16 @@ interface SendMessageParams {
   content: string;
 }
 
-// Mock function for sending a message
+// Send a message to a student
 const sendMessage = async (params: SendMessageParams) => {
   // Validate required fields
   if (!params.receiverId || !params.courseId || !params.content) {
     throw new Error('Missing required fields');
   }
 
-  // Mock implementation - in a real app this would be an API call
-  // return await axios.post('/api/messages', params);
-  
-  // Let's simulate the API call with a delay
-  await new Promise(resolve => setTimeout(resolve, 500));
-
-  // Return a mock response
-  return {
-    _id: Math.random().toString(36).substring(2, 15),
-    senderId: { id: 'current-user', name: 'Instructor' },
-    receiverId: { id: params.receiverId, name: 'Student' },
-    content: params.content,
-    courseId: params.courseId,
-    createdAt: new Date().toISOString(),
-    read: false
-  };
+  // Make the actual API call
+  const response = await axios.post('/api/messages', params);
+  return response.data;
 };
 
 export const useSendMessage = () => {
@@ -43,5 +29,9 @@ export const useSendMessage = () => {
       queryClient.invalidateQueries({ queryKey: ['messages', variables.receiverId, variables.courseId] });
       queryClient.invalidateQueries({ queryKey: ['conversations'] });
     },
+    onError: (error: any) => {
+      console.error('Failed to send message:', error);
+      throw error;
+    }
   });
 };

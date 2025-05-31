@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -64,7 +63,9 @@ const Messages = () => {
   const { data: discussions = [], isLoading: isLoadingDiscussions } = useInstructorDiscussions();
   const { data: courses = [], isLoading: isLoadingCourses } = useInstructorCourses();
   const { data: conversations = [], isLoading: isLoadingConversations } = useConversations();
-  const { data: enrolledStudents = [], isLoading: isLoadingStudents } = useEnrolledStudents();
+  const { data: enrolledStudents = [], isLoading: isLoadingStudents } = useEnrolledStudents(
+    selectedCourse !== 'all' ? selectedCourse : undefined
+  );
   const { data: messages = [], isLoading: isLoadingMessages } = useMessages(selectedConversation || '', selectedCourseForDM || '');
   
   const addReplyMutation = useAddReply();
@@ -132,59 +133,7 @@ const Messages = () => {
       });
       toast({ 
         title: 'Missing required fields',
-        description: 'Please select a conversation and course before sending a message.',
-        variant: 'destructive'
-      });
-      return;
-    }
-
-    // Get the current conversation to ensure we have valid IDs
-    const currentConversation = conversations?.find(c => c.partner._id === selectedConversation);
-    console.log('Found conversation:', {
-      selectedConversation,
-      currentConversation,
-      allConversations: conversations
-    });
-    
-    if (!currentConversation) {
-      toast({ 
-        title: 'Invalid conversation',
-        description: 'Please select a valid conversation.',
-        variant: 'destructive'
-      });
-      return;
-    }
-
-    // Ensure we have valid MongoDB ObjectIDs
-    const isValidReceiverId = isValidObjectId(currentConversation.partner._id);
-    const isValidCourseId = isValidObjectId(currentConversation.course._id);
-    console.log('ID validation:', {
-      receiverId: currentConversation.partner._id,
-      isValidReceiverId,
-      courseId: currentConversation.course._id,
-      isValidCourseId
-    });
-
-    if (!isValidReceiverId || !isValidCourseId) {
-      toast({ 
-        title: 'Invalid IDs',
-        description: 'The conversation contains invalid IDs.',
-        variant: 'destructive'
-      });
-      return;
-    }
-
-    // Ensure message content is not too long
-    const messageLength = newDirectMessage.trim().length;
-    console.log('Message validation:', {
-      messageLength,
-      isValid: messageLength <= 5000
-    });
-
-    if (messageLength > 5000) {
-      toast({ 
-        title: 'Message too long',
-        description: 'Message content cannot exceed 5000 characters.',
+        description: 'Please select a student and type a message.',
         variant: 'destructive'
       });
       return;
@@ -194,16 +143,11 @@ const Messages = () => {
     const messageContent = newDirectMessage.trim();
     setNewDirectMessage('');
 
-    console.log('Sending message:', {
-      receiverId: currentConversation.partner._id,
-      courseId: currentConversation.course._id,
-      content: messageContent
-    });
-
+    // Send the message directly without checking conversations
     sendMessageMutation.mutate(
       {
-        receiverId: currentConversation.partner._id,
-        courseId: currentConversation.course._id,
+        receiverId: selectedConversation,
+        courseId: selectedCourseForDM,
         content: messageContent,
       },
       {
@@ -218,43 +162,8 @@ const Messages = () => {
           setNewDirectMessage(messageContent);
           
           let errorTitle = 'Failed to send message';
-          let errorDescription = 'An unexpected error occurred. Please try again.';
+          let errorDescription = error?.response?.data?.message || 'An unexpected error occurred. Please try again.';
 
-          // Handle validation errors from our frontend validation
-          if (error instanceof Error) {
-            errorDescription = error.message;
-            if (error.message.includes('ObjectId')) {
-              errorTitle = 'Invalid ID format';
-            } else if (error.message.includes('required fields')) {
-              errorTitle = 'Missing information';
-            } else if (error.message.includes('characters')) {
-              errorTitle = 'Message too long';
-            } else if (error.message.includes('part of the course')) {
-              errorTitle = 'Course access error';
-            } else if (error.message.includes('cannot message')) {
-              errorTitle = 'Permission denied';
-            }
-          } 
-          // Handle backend errors
-          else if (error?.response?.data?.message) {
-            errorDescription = error.response.data.message;
-            if (error.response.status === 403) {
-              errorTitle = 'Permission denied';
-            } else if (error.response.status === 400) {
-              errorTitle = 'Invalid request';
-            }
-          }
-
-          console.error('Message sending error details:', {
-            error,
-            requestData: {
-              receiverId: currentConversation.partner._id,
-              courseId: currentConversation.course._id,
-              content: messageContent
-            },
-            errorResponse: error?.response?.data
-          });
-          
           toast({ 
             title: errorTitle,
             description: errorDescription,
@@ -653,6 +562,7 @@ const Messages = () => {
                         ))}
                       </SelectContent>
                     </Select>
+
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                       <Input
@@ -665,46 +575,51 @@ const Messages = () => {
                   </div>
                   
                   <ScrollArea className="flex-1">
-                    {isLoadingConversations ? (
-                      <div className="flex items-center justify-center py-8">
-                        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                      </div>
-                    ) : (
-                      <div className="space-y-2 p-2">
-                        {filteredConversations.map((conv) => (
-                          <div
-                            key={conv.partner._id}
-                            className={cn(
-                              "p-3 rounded-lg cursor-pointer transition-colors",
-                              selectedConversation === conv.partner._id
-                                ? "bg-primary/10"
-                                : "hover:bg-muted"
-                            )}
-                            onClick={() => {
-                              setSelectedConversation(conv.partner._id);
-                              setSelectedCourseForDM(conv.course._id);
-                            }}
-                          >
-                            <div className="flex items-center space-x-3">
-                              <Avatar>
-                                <AvatarFallback>
-                                  {conv.partner.name.split(' ').map(n => n[0]).join('')}
-                                </AvatarFallback>
-                              </Avatar>
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center justify-between">
-                                  <p className="font-medium truncate">{conv.partner.name}</p>
-                                  {conv.unreadCount > 0 && (
-                                    <Badge variant="secondary" className="ml-2">{conv.unreadCount}</Badge>
-                                  )}
+                    {selectedCourse !== 'all' ? (
+                      isLoadingStudents ? (
+                        <div className="flex items-center justify-center py-8">
+                          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                        </div>
+                      ) : enrolledStudents.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-8 text-center px-4">
+                          <p className="text-sm text-muted-foreground">No enrolled students in this course</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-2 p-2">
+                          {enrolledStudents.map(student => (
+                            <div
+                              key={student.userId._id}
+                              className={cn(
+                                "p-3 rounded-lg cursor-pointer transition-colors",
+                                selectedConversation === student.userId._id
+                                  ? "bg-primary/10"
+                                  : "hover:bg-muted"
+                              )}
+                              onClick={() => {
+                                setSelectedConversation(student.userId._id);
+                                setSelectedCourseForDM(selectedCourse);
+                              }}
+                            >
+                              <div className="flex items-center space-x-3">
+                                <Avatar>
+                                  <AvatarFallback>
+                                    {student.userId.name.split(' ').map(n => n[0]).join('')}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-medium truncate">{student.userId.name}</p>
+                                  <p className="text-xs text-muted-foreground truncate">
+                                    {student.userId.email}
+                                  </p>
                                 </div>
-                                <p className="text-sm text-muted-foreground truncate">
-                                  {conv.course.title}
-                                </p>
                               </div>
                             </div>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
+                      )
+                    ) : (
+                      <div className="flex flex-col items-center justify-center py-8 text-center px-4">
+                        <p className="text-sm text-muted-foreground">Select a course to view enrolled students</p>
                       </div>
                     )}
                   </ScrollArea>
@@ -719,15 +634,15 @@ const Messages = () => {
                         <div className="flex items-center space-x-3">
                           <Avatar className="h-8 w-8 sm:h-10 sm:w-10">
                             <AvatarFallback>
-                              {conversations.find(c => c.partner._id === selectedConversation)?.partner.name.split(' ').map(n => n[0]).join('')}
+                              {enrolledStudents.find(s => s.userId._id === selectedConversation)?.userId.name.split(' ').map(n => n[0]).join('') || '??'}
                             </AvatarFallback>
                           </Avatar>
                           <div>
                             <h2 className="font-semibold text-sm sm:text-base">
-                              {conversations.find(c => c.partner._id === selectedConversation)?.partner.name}
+                              {enrolledStudents.find(s => s.userId._id === selectedConversation)?.userId.name || 'Loading...'}
                             </h2>
                             <p className="text-xs sm:text-sm text-muted-foreground">
-                              {conversations.find(c => c.partner._id === selectedConversation)?.course.title}
+                              {courses.find(c => c._id === selectedCourseForDM)?.title || 'Loading...'}
                             </p>
                           </div>
                         </div>
@@ -747,29 +662,40 @@ const Messages = () => {
                       {/* Messages Area */}
                       <ScrollArea className="flex-1 p-4">
                         <div className="space-y-4">
-                          {messages.map((message) => (
-                            <div
-                              key={message._id}
-                              className={cn(
-                                "flex",
-                                message.senderId.id === currentUserId ? "justify-end" : "justify-start"
-                              )}
-                            >
+                          {isLoadingMessages ? (
+                            <div className="flex items-center justify-center py-8">
+                              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                            </div>
+                          ) : messages.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center py-8 text-center">
+                              <p className="text-sm text-muted-foreground">No messages yet</p>
+                              <p className="text-xs text-muted-foreground mt-1">Send a message to start the conversation</p>
+                            </div>
+                          ) : (
+                            messages.map((message) => (
                               <div
+                                key={message._id}
                                 className={cn(
-                                  "max-w-[85%] sm:max-w-[70%] rounded-lg p-3 sm:p-4",
-                                  message.senderId.id === currentUserId
-                                    ? "bg-primary text-primary-foreground"
-                                    : "bg-muted"
+                                  "flex",
+                                  message.senderId.id === currentUserId ? "justify-end" : "justify-start"
                                 )}
                               >
-                                <p className="text-sm sm:text-base break-words">{message.content}</p>
-                                <p className="text-xs opacity-70 mt-1">
-                                  {formatDistanceToNow(new Date(message.createdAt), { addSuffix: true })}
-                                </p>
+                                <div
+                                  className={cn(
+                                    "max-w-[85%] sm:max-w-[70%] rounded-lg p-3 sm:p-4",
+                                    message.senderId.id === currentUserId
+                                      ? "bg-primary text-primary-foreground"
+                                      : "bg-muted"
+                                  )}
+                                >
+                                  <p className="text-sm sm:text-base break-words">{message.content}</p>
+                                  <p className="text-xs opacity-70 mt-1">
+                                    {formatDistanceToNow(new Date(message.createdAt), { addSuffix: true })}
+                                  </p>
+                                </div>
                               </div>
-                            </div>
-                          ))}
+                            ))
+                          )}
                         </div>
                       </ScrollArea>
 
@@ -810,7 +736,7 @@ const Messages = () => {
                       <MessageSquare className="h-12 w-12 text-muted-foreground mb-4" />
                       <h3 className="text-lg font-medium mb-2">No Conversation Selected</h3>
                       <p className="text-sm text-muted-foreground">
-                        Choose a conversation from the list to start messaging
+                        Select a student from the list to start messaging
                       </p>
                     </div>
                   )}
