@@ -295,11 +295,26 @@ export const useUpdateCourse = () => {
   return useMutation({
     mutationFn: async ({ courseId, courseData }: { courseId: string, courseData: Partial<Course> }) => {
       try {
-        const response = await axios.put(`/api/courses/${courseId}`, courseData);
+        // Check authentication token
+        const token = localStorage.getItem('auth_token');
+        if (!token) {
+          throw new Error('Authentication required. Please log in.');
+        }
+
+        const response = await axios.put(`/api/courses/${courseId}`, courseData, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
         return response.data.course;
-      } catch (error) {
+      } catch (error: any) {
         console.error('Failed to update course:', error);
-        throw new Error('Failed to update course. Please try again.');
+        const errorMessage = error.response?.data?.message || 'Failed to update course';
+        if (error.response?.data?.debug) {
+          console.debug('Permission debug info:', error.response.data.debug);
+        }
+        throw new Error(errorMessage);
       }
     },
     onSuccess: (_, variables) => {
@@ -315,11 +330,26 @@ export const useDeleteCourse = () => {
   return useMutation({
     mutationFn: async (courseId: string) => {
       try {
-        await axios.delete(`/api/courses/${courseId}`);
-        return { success: true };
-      } catch (error) {
+        // Check authentication token
+        const token = localStorage.getItem('auth_token');
+        if (!token) {
+          throw new Error('Authentication required. Please log in.');
+        }
+
+        const response = await axios.delete(`/api/courses/${courseId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        return response.data;
+      } catch (error: any) {
         console.error('Failed to delete course:', error);
-        throw new Error('Failed to delete course. Please try again.');
+        const errorMessage = error.response?.data?.message || 'Failed to delete course';
+        if (error.response?.data?.debug) {
+          console.debug('Permission debug info:', error.response.data.debug);
+        }
+        throw new Error(errorMessage);
       }
     },
     onSuccess: () => {

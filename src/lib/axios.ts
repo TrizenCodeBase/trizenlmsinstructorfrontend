@@ -5,14 +5,13 @@ const instance = axios.create({
   baseURL: 'https://trizenlmsinstructorbackend.llp.trizenventures.com',  // Backend URL
   // baseURL: 'http://localhost:3000',  // Backend URL
   timeout: 15000,
-  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
   }
 });
 
-// Add request interceptor to include aut.h token (if available)
+// Add request interceptor to include auth token (if available)
 instance.interceptors.request.use((config) => {
   const token = localStorage.getItem('auth_token');
   if (token) {
