@@ -1,11 +1,12 @@
 import { toast } from "sonner";
 
-// Prefer same-origin proxy to avoid CORS and leverage frontend Nginx timeouts
-// Fallback to local backend in development
-const API_URL =
+// Endpoint strategy: prefer same-origin proxy in prod; fallback to direct backend on proxy failure
+const PRIMARY_API_URL =
   typeof window !== "undefined" && window.location.hostname.endsWith("trizenventures.com")
     ? "/api"
     : "http://localhost:5001/api";
+
+const DIRECT_BACKEND_URL = "https://trizenlmsinstructorbackend.llp.trizenventures.com/api";
 
 // Per-chunk timeouts. Final chunk includes merge + storage upload and can take longer
 const CHUNK_TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes
@@ -42,6 +43,9 @@ export const uploadVideo = async (
   const chunkSize = 10 * 1024 * 1024; // 10MB chunks for better performance
   const chunks = Math.ceil(file.size / chunkSize);
   
+  let baseUrl = PRIMARY_API_URL;
+  let hasSwitchedToDirect = false;
+
   try {
     for (let start = 0; start < file.size; start += chunkSize) {
       const chunk = file.slice(start, start + chunkSize);
@@ -63,7 +67,7 @@ export const uploadVideo = async (
           isFinalChunk ? FINAL_CHUNK_TIMEOUT_MS : CHUNK_TIMEOUT_MS
         );
 
-        const response = await fetch(`${API_URL}/upload`, {
+        const response = await fetch(`${baseUrl}/upload`, {
           method: "POST",
           body: formData,
           credentials: 'include',
@@ -75,8 +79,30 @@ export const uploadVideo = async (
         clearTimeout(timeoutId);
 
         if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.error || `Chunk upload failed with status: ${response.status}`);
+          // If proxy timed out or failed early and we haven't switched yet, try direct backend once
+          if (!hasSwitchedToDirect && PRIMARY_API_URL === "/api" && (response.status === 504 || response.status === 502)) {
+            console.warn(`Proxy returned ${response.status}. Switching to direct backend for uploads...`);
+            baseUrl = DIRECT_BACKEND_URL;
+            hasSwitchedToDirect = true;
+            // Retry this chunk immediately against direct backend
+            const retryResponse = await fetch(`${baseUrl}/upload`, {
+              method: "POST",
+              body: formData,
+              credentials: 'include',
+              signal: controller.signal,
+              cache: 'no-store'
+            });
+            if (!retryResponse.ok) {
+              const retryErr: { error?: string } = await retryResponse.json().catch(() => ({}));
+              throw new Error(retryErr.error || `Chunk upload failed with status: ${retryResponse.status}`);
+            }
+            // Replace response with successful retry for downstream parsing
+            // Note: for non-final chunks we don't need body; for final we parse below
+            // Continue to progress update below
+          } else {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || `Chunk upload failed with status: ${response.status}`);
+          }
         }
 
         // Calculate accurate progress
