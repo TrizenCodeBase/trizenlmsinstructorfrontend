@@ -2,8 +2,8 @@ import axios from 'axios';
 
 // Create an axios instance with custom defaults
 const instance = axios.create({
-  baseURL: 'http://localhost:5001',  // Local Backend URL
-  // baseURL: 'https://trizenlmsinstructorbackend.llp.trizenventures.com',  // Production Backend URL
+  // baseURL: 'http://localhost:5001',  // Local Backend URL
+  baseURL: 'https://trizenlmsinstructorbackend.llp.trizenventures.com',  // Production Backend URL
   timeout: 15000,
   headers: {
     'Content-Type': 'application/json',

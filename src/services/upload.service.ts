@@ -1,7 +1,7 @@
 import { toast } from "sonner";
 
-const API_URL = "http://localhost:5001/api";
-// const API_URL = "https://trizenlmsinstructorbackend.llp.trizenventures.com/api";
+// const API_URL = "http://localhost:5001/api";
+const API_URL = "https://trizenlmsinstructorbackend.llp.trizenventures.com/api";
 const UPLOAD_TIMEOUT = 300000; // 5 minutes in milliseconds
 
 export interface UploadProgressCallback {
