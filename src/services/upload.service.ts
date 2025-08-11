@@ -138,6 +138,31 @@ export const uploadVideo = async (
         }
       } catch (error) {
         console.error("Error uploading chunk:", error);
+        // If the final chunk failed, try probing the expected MinIO URL in case backend finished after proxy timeout
+        const isFinalChunk = Math.floor(start / chunkSize) === chunks - 1;
+        if (isFinalChunk) {
+          try {
+            const sanitizedName = file.name.replace(/\s+/g, '');
+            const bucket = 'webdevbootcamp1';
+            const minioUrl = `https://lmsbackendminio-api.llp.trizenventures.com/${bucket}/${sanitizedName}`;
+            const headResp = await fetch(minioUrl, { method: 'HEAD', cache: 'no-store' });
+            if (headResp.ok) {
+              const fileInfo: UploadedFileInfo = {
+                filename: sanitizedName,
+                originalName: file.name,
+                size: file.size,
+                mimetype: file.type || 'video/mp4',
+                videoUrl: minioUrl,
+                message: 'File likely uploaded. Finalization response timed out.'
+              };
+              onComplete(fileInfo, true);
+              onProgress(100);
+              return;
+            }
+          } catch (probeErr) {
+            console.warn('MinIO probe after final-chunk failure did not confirm upload:', probeErr);
+          }
+        }
         onError(error instanceof Error ? error : new Error("Unknown error during upload"));
         return;
       }
