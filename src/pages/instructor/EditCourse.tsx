@@ -308,6 +308,37 @@ const EditCourse = () => {
   };
   
   const onSubmit = (data: CourseFormData) => {
+    // Basic client-side validation to prevent backend 400s
+    const missingTopLevel: string[] = [];
+    if (!data.title?.trim()) missingTopLevel.push('title');
+    if (!data.description?.trim()) missingTopLevel.push('description');
+    if (!data.instructor?.trim()) missingTopLevel.push('instructor');
+    if (!data.duration?.trim()) missingTopLevel.push('duration');
+    if (!data.level?.toString()?.trim()) missingTopLevel.push('level');
+    if (!data.category?.trim()) missingTopLevel.push('category');
+    if (!data.language?.trim()) missingTopLevel.push('language');
+    if (!data.image?.trim()) missingTopLevel.push('image');
+
+    if (missingTopLevel.length) {
+      toast.error(`Please fill required fields: ${missingTopLevel.join(', ')}`);
+      return;
+    }
+
+    if (!Array.isArray(data.roadmap) || data.roadmap.length === 0) {
+      toast.error('Course roadmap must have at least one day');
+      return;
+    }
+
+    const invalidDays = data.roadmap
+      .map((day, idx) => ({ idx, day }))
+      .filter(({ day }) => !day.topics?.trim() || !day.video?.trim());
+
+    if (invalidDays.length > 0) {
+      const dayNumbers = invalidDays.map(({ idx }) => idx + 1).join(', ');
+      toast.error(`Please provide Topics and Video for all days. Missing in day(s): ${dayNumbers}`);
+      return;
+    }
+
     // Update course with the form data
     if (!courseId) {
       toast.error("Course ID is missing");

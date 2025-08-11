@@ -1,15 +1,32 @@
 import { toast } from "sonner";
 
-// const API_URL = "http://localhost:5001/api";
-const API_URL = "https://trizenlmsinstructorbackend.llp.trizenventures.com/api";
-const UPLOAD_TIMEOUT = 300000; // 5 minutes in milliseconds
+// Prefer same-origin proxy to avoid CORS and leverage frontend Nginx timeouts
+// Fallback to local backend in development
+const API_URL =
+  typeof window !== "undefined" && window.location.hostname.endsWith("trizenventures.com")
+    ? "/api"
+    : "http://localhost:5001/api";
+
+// Per-chunk timeouts. Final chunk includes merge + storage upload and can take longer
+const CHUNK_TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes
+const FINAL_CHUNK_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
 
 export interface UploadProgressCallback {
   (progress: number): void;
 }
 
+export type UploadedFileInfo = {
+  filename: string;
+  originalName: string;
+  size: number;
+  mimetype: string;
+  baseURL?: string;
+  videoUrl: string;
+  message?: string;
+};
+
 export interface UploadCompleteCallback {
-  (fileInfo: any, usingFallback?: boolean): void;
+  (fileInfo: UploadedFileInfo, usingFallback?: boolean): void;
 }
 
 export interface UploadErrorCallback {
@@ -40,13 +57,18 @@ export const uploadVideo = async (
         
         // Create AbortController for timeout
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), UPLOAD_TIMEOUT);
+        const isFinalChunk = Math.floor(start / chunkSize) === chunks - 1;
+        const timeoutId = setTimeout(
+          () => controller.abort(),
+          isFinalChunk ? FINAL_CHUNK_TIMEOUT_MS : CHUNK_TIMEOUT_MS
+        );
 
         const response = await fetch(`${API_URL}/upload`, {
           method: "POST",
           body: formData,
           credentials: 'include',
           signal: controller.signal,
+          cache: 'no-store'
         });
 
         // Clear the timeout
@@ -62,7 +84,7 @@ export const uploadVideo = async (
         onProgress(Math.min(currentProgress, 100));
         
         // If this is the final chunk, get the complete file info
-        if (Math.floor(start / chunkSize) === chunks - 1) {
+        if (isFinalChunk) {
           const responseData = await response.json();
           console.log("Final chunk response:", responseData);
           
